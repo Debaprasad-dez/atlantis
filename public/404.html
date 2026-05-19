@@ -1,0 +1,14 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>ATLANTIS</title>
+    <script>
+      // Encode the full URL into sessionStorage then redirect to the base,
+      // where index.html will restore it via history.replaceState.
+      sessionStorage.setItem('spa-redirect', window.location.href);
+      window.location.replace('/atlantis/');
+    </script>
+  </head>
+  <body></body>
+</html>

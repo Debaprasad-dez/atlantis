@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Dark background -->
+  <rect width="32" height="32" rx="6" fill="#0A0E14"/>
+  <!-- Hexagon frame (intelligence/network motif) -->
+  <polygon
+    points="16,3 27,9 27,23 16,29 5,23 5,9"
+    stroke="#00D4FF"
+    stroke-width="1.5"
+    fill="none"
+    opacity="0.6"
+  />
+  <!-- Inner A letterform -->
+  <path
+    d="M16 8 L22 22 M16 8 L10 22 M12 18 L20 18"
+    stroke="#00D4FF"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Center node dot -->
+  <circle cx="16" cy="8" r="1.5" fill="#00D4FF"/>
+</svg>

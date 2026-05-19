@@ -29,7 +29,7 @@ export default function App() {
     return <BootSplash stage={seed.stage} done={seed.done} total={seed.total} error={seed.error} />;
   }
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/atlantis">
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
