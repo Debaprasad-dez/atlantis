@@ -1,0 +1,257 @@
+/* Shared print + screen styles for ATLANTIS documentation.
+   Mirrors the application's design system so PDFs feel like part of the product. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg-base: #0a0e14;
+  --bg-elevated: #0f1419;
+  --bg-panel: #141b23;
+  --border-subtle: #1f2937;
+  --border-emphasis: #2d3748;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-primary: #00d9ff;
+  --accent-warning: #ffb627;
+  --accent-critical: #ff4747;
+  --accent-success: #22d3a6;
+  --viz-magenta: #ff4ecd;
+  --viz-violet: #a78bfa;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.55;
+  font-feature-settings: 'tnum' 1, 'ss01' 1;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.page {
+  max-width: 184mm;
+  margin: 0 auto;
+  padding: 14mm 12mm;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 14mm;
+}
+
+.page-break { page-break-before: always; }
+section { page-break-inside: avoid; }
+h1, h2, h3 { page-break-after: avoid; }
+
+/* Typography */
+h1, h2, h3, h4 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+h1 { font-size: 26px; letter-spacing: 0.06em; text-transform: uppercase; }
+h2 { font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 24px; padding-bottom: 4px; border-bottom: 1px solid var(--border-emphasis); }
+h3 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-primary); margin-top: 18px; }
+h4 { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); margin-top: 12px; }
+p { margin: 6px 0; color: var(--text-secondary); }
+strong { color: var(--text-primary); font-weight: 600; }
+code, .mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-primary); font-variant-numeric: tabular-nums; }
+ul, ol { margin: 6px 0 6px 18px; padding: 0; color: var(--text-secondary); }
+li { margin: 2px 0; }
+hr { border: none; border-top: 1px solid var(--border-subtle); margin: 18px 0; }
+
+/* Cover page */
+.cover {
+  min-height: 270mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background:
+    linear-gradient(135deg, rgba(0, 217, 255, 0.04), transparent 40%),
+    repeating-linear-gradient(0deg, rgba(31, 41, 55, 0.4) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(90deg, rgba(31, 41, 55, 0.4) 0 1px, transparent 1px 24px);
+  padding: 24mm 18mm;
+}
+.cover .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  letter-spacing: 0.18em;
+}
+.cover .brand .mark {
+  width: 18px; height: 18px;
+  border: 1px solid var(--accent-primary);
+  position: relative;
+}
+.cover .brand .mark::after {
+  content: ''; position: absolute; inset: 2px;
+  background: rgba(0, 217, 255, 0.3);
+}
+.cover h1 {
+  font-size: 56px;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  margin-top: auto;
+}
+.cover .subtitle {
+  font-size: 14px;
+  color: var(--accent-primary);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-top: 12px;
+}
+.cover .meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 32px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+.cover .meta div b {
+  display: block;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+/* Panels and chips — mirror the app */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+.panel-elevated {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-emphasis);
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+.callout {
+  border-left: 2px solid var(--accent-primary);
+  background: rgba(0, 217, 255, 0.04);
+  padding: 8px 10px;
+  margin: 8px 0;
+  font-size: 11.5px;
+}
+.callout.warn  { border-color: var(--accent-warning); background: rgba(255, 182, 39, 0.05); }
+.callout.crit  { border-color: var(--accent-critical); background: rgba(255, 71, 71, 0.05); }
+.chip {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+}
+.chip.on    { color: var(--accent-primary); border-color: rgba(0, 217, 255, 0.45); background: rgba(0, 217, 255, 0.08); }
+.chip.warn  { color: var(--accent-warning); border-color: rgba(255, 182, 39, 0.45); }
+.chip.crit  { color: var(--accent-critical); border-color: rgba(255, 71, 71, 0.45); }
+.chip.ok    { color: var(--accent-success); border-color: rgba(34, 211, 166, 0.45); }
+.chip.viz   { color: var(--viz-magenta); border-color: rgba(255, 78, 205, 0.45); }
+kbd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  border: 1px solid var(--border-emphasis);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  padding: 1px 5px;
+}
+
+/* Tables — dense, zebra */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin: 8px 0;
+}
+th, td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+}
+th {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-emphasis);
+}
+tbody tr:nth-child(even) { background: rgba(15, 20, 25, 0.45); }
+td.mono, th.mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+.center { text-align: center; }
+.right  { text-align: right; }
+
+/* Section label */
+.label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Diagrams */
+.diagram {
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+}
+.diagram svg { display: block; width: 100%; height: auto; }
+.diagram .caption {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 6px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* TOC */
+.toc {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  padding: 12px 14px;
+}
+.toc ol { margin: 0; padding-left: 18px; }
+.toc li { margin: 3px 0; }
+.toc a { color: var(--text-primary); text-decoration: none; }
+.toc a::after { content: ''; }
+
+/* Footer line for each page (screen only — print uses @page) */
+.footer-bar {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 6px;
+  margin-top: 24px;
+}

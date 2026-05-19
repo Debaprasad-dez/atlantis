@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ATLANTIS — Architecture</title>
+<link rel="stylesheet" href="doc-styles.css" />
+</head>
+<body>
+
+<!-- =================================================================== -->
+<!-- COVER                                                               -->
+<!-- =================================================================== -->
+<div class="cover">
+  <div class="brand">
+    <span class="mark"></span>
+    <span>ATLANTIS // FRAUD INTELLIGENCE</span>
+  </div>
+  <div>
+    <h1>Architecture</h1>
+    <div class="subtitle">System Design &amp; Internals</div>
+    <div class="meta">
+      <div><b>v0.1.0</b>Document version</div>
+      <div><b>Browser-only</b>Deployment</div>
+      <div><b>IndexedDB</b>Primary store</div>
+      <div><b>Workers</b>Heavy compute</div>
+    </div>
+  </div>
+  <div class="footer-bar">
+    <span>ATLANTIS · ARCHITECTURE · v0.1</span>
+    <span>RESTRICTED · INTERNAL USE</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- TOC                                                                 -->
+<!-- =================================================================== -->
+<div class="page page-break">
+<h2>Contents</h2>
+<div class="toc">
+<ol>
+  <li><a href="#principles">Architectural principles</a></li>
+  <li><a href="#layers">Layered overview</a></li>
+  <li><a href="#modules">Module map</a></li>
+  <li><a href="#dataflow">Runtime data flow</a></li>
+  <li><a href="#workers">Worker topology</a></li>
+  <li><a href="#schema">Dexie schema &amp; entity model</a></li>
+  <li><a href="#state">State management</a></li>
+  <li><a href="#rbac">RBAC model</a></li>
+  <li><a href="#offline">Offline &amp; service worker</a></li>
+  <li><a href="#perf">Performance budget</a></li>
+  <li><a href="#security">Security model</a></li>
+  <li><a href="#extensibility">Extensibility &amp; roadmap</a></li>
+</ol>
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 1. PRINCIPLES                                                       -->
+<!-- =================================================================== -->
+<div class="page page-break" id="principles">
+<h2>1 · Architectural principles</h2>
+<table>
+  <thead><tr><th>#</th><th>Principle</th><th>Consequence</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><strong>Browser-only, fully offline</strong></td><td>No server runtime. All data in IndexedDB. PWA service worker for asset caching.</td></tr>
+    <tr><td>2</td><td><strong>Workers do heavy work</strong></td><td>Seeding and live ticks run off the main thread to keep the UI at 60 fps.</td></tr>
+    <tr><td>3</td><td><strong>Tiles are self-contained</strong></td><td>Each dashboard tile owns its own data hook, loading state, error boundary.</td></tr>
+    <tr><td>4</td><td><strong>Density over decoration</strong></td><td>Every pixel earns its place — Bloomberg / SOC dashboard aesthetic.</td></tr>
+    <tr><td>5</td><td><strong>No TypeScript, but typed-feeling</strong></td><td>JSDoc <code>@typedef</code> + PropTypes for editor autocomplete and runtime validation.</td></tr>
+    <tr><td>6</td><td><strong>Auditable by default</strong></td><td>Every data access goes through a single <code>audit()</code> helper.</td></tr>
+    <tr><td>7</td><td><strong>RBAC at the boundary</strong></td><td>Permissions checked at route guards and action handlers, not deep inside components.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- =================================================================== -->
+<!-- 2. LAYERS                                                           -->
+<!-- =================================================================== -->
+<div class="page page-break" id="layers">
+<h2>2 · Layered overview</h2>
+
+<div class="diagram">
+<svg viewBox="0 0 900 460" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .lyr{fill:#141B23;stroke:#1F2937}
+    .lbl{font:600 11px 'JetBrains Mono';fill:#94A3B8;letter-spacing:1.5px}
+    .ttl{font:600 13px 'Inter';fill:#E2E8F0;letter-spacing:1.5px}
+    .mod{font:10px 'Inter';fill:#94A3B8}
+    .arr{stroke:#00D9FF;stroke-width:1.2;fill:none}
+  </style>
+  <rect width="900" height="460" fill="#0A0E14"/>
+
+  <!-- Layer 1: UI -->
+  <rect x="20" y="20" width="860" height="74" class="lyr"/>
+  <text x="32" y="40" class="lbl">L1 · UI / VIEW</text>
+  <text x="32" y="58" class="ttl">React components · Tailwind · Framer Motion</text>
+  <g class="mod" transform="translate(32,72)">
+    <text x="0" y="12">primitives/  Panel · Tile · DataTable · Sparkline · MetricCard · LiveBadge · FilterChip · Inspector · RiskBar</text>
+  </g>
+
+  <!-- Layer 2: Features -->
+  <rect x="20" y="104" width="860" height="74" class="lyr"/>
+  <text x="32" y="124" class="lbl">L2 · FEATURE / SCREEN</text>
+  <text x="32" y="142" class="ttl">Dashboard · Entity Explorer · Admin · Auth · Boot</text>
+  <g class="mod" transform="translate(32,156)">
+    <text x="0" y="12">14 dashboard tiles · faceted explorer · custom role builder · login · boot splash · command palette</text>
+  </g>
+
+  <!-- Layer 3: State + Hooks -->
+  <rect x="20" y="188" width="860" height="74" class="lyr"/>
+  <text x="32" y="208" class="lbl">L3 · STATE &amp; DATA HOOKS</text>
+  <text x="32" y="226" class="ttl">Zustand stores · useDexie / useEntities / useLiveTick / useSeed / useRoles</text>
+  <g class="mod" transform="translate(32,240)">
+    <text x="0" y="12">authStore (persisted) · uiStore · liveStore (rolling buffers, sparks, metrics)</text>
+  </g>
+
+  <!-- Layer 4: Domain / lib -->
+  <rect x="20" y="272" width="860" height="74" class="lyr"/>
+  <text x="32" y="292" class="lbl">L4 · DOMAIN LIB</text>
+  <text x="32" y="310" class="ttl">RBAC · audit · format · ids</text>
+  <g class="mod" transform="translate(32,324)">
+    <text x="0" y="12">ALL_PERMISSIONS · BUILTIN_ROLES · can() · audit() · fmtMoney · ulid()</text>
+  </g>
+
+  <!-- Layer 5: Persistence + workers -->
+  <rect x="20" y="356" width="860" height="80" class="lyr"/>
+  <text x="32" y="376" class="lbl">L5 · PERSISTENCE &amp; COMPUTE</text>
+  <text x="32" y="394" class="ttl">Dexie / IndexedDB · seed.worker · tick.worker · service worker</text>
+  <g class="mod" transform="translate(32,408)">
+    <text x="0" y="12">tables: entities · relationships · events · anomalies · investigations · audit · users · roles · sources · meta</text>
+    <text x="0" y="24">workers seed 50k+200k+500k records and emit synthetic ticks every 2–5s; PWA worker caches the bundle</text>
+  </g>
+
+  <!-- arrows: L1↔L2↔L3↔L4↔L5 -->
+  <path d="M450 94 V104" class="arr" marker-end="url(#a2)"/>
+  <path d="M450 178 V188" class="arr" marker-end="url(#a2)"/>
+  <path d="M450 262 V272" class="arr" marker-end="url(#a2)"/>
+  <path d="M450 346 V356" class="arr" marker-end="url(#a2)"/>
+  <defs>
+    <marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#00D9FF"/>
+    </marker>
+  </defs>
+</svg>
+<div class="caption">DIAGRAM 2.1 · Five layers, top-to-bottom</div>
+</div>
+
+<p>Each layer depends only on layers below it. The dashboard never reads
+IndexedDB directly — it goes through a hook, which goes through the lib, which
+wraps Dexie.</p>
+</div>
+
+<!-- =================================================================== -->
+<!-- 3. MODULES                                                          -->
+<!-- =================================================================== -->
+<div class="page page-break" id="modules">
+<h2>3 · Module map</h2>
+
+<div class="diagram">
+<svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .box{fill:#141B23;stroke:#1F2937}
+    .head{font:600 9px 'JetBrains Mono';fill:#00D9FF;letter-spacing:1.5px}
+    .item{font:10px 'JetBrains Mono';fill:#94A3B8}
+  </style>
+  <rect width="900" height="520" fill="#0A0E14"/>
+
+  <!-- src/components/primitives -->
+  <rect x="10" y="10" width="220" height="160" class="box"/>
+  <text x="20" y="28" class="head">src/components/primitives</text>
+  <g class="item" transform="translate(20,42)">
+    <text y="12">Panel.jsx</text>
+    <text y="26">Tile.jsx</text>
+    <text y="40">DataTable.jsx</text>
+    <text y="54">Sparkline.jsx</text>
+    <text y="68">MetricCard.jsx</text>
+    <text y="82">StatusIndicator.jsx</text>
+    <text y="96">LiveBadge.jsx</text>
+    <text y="110">FilterChip.jsx</text>
+    <text y="124">Inspector.jsx (+ KV)</text>
+  </g>
+
+  <!-- src/components/tiles -->
+  <rect x="240" y="10" width="240" height="240" class="box"/>
+  <text x="250" y="28" class="head">src/components/tiles</text>
+  <g class="item" transform="translate(250,42)">
+    <text y="12">SystemStatusStrip.jsx</text>
+    <text y="26">LiveEventFeed.jsx</text>
+    <text y="40">EntityCounters.jsx</text>
+    <text y="54">TimeSeriesChart.jsx</text>
+    <text y="68">GeoHeatmap.jsx</text>
+    <text y="82">TopEntitiesTile.jsx</text>
+    <text y="96">GraphPreviewTile.jsx</text>
+    <text y="110">AnomalyScoreTile.jsx</text>
+    <text y="124">InvestigationsTile.jsx</text>
+    <text y="138">DistributionTile.jsx</text>
+    <text y="152">AuditTile.jsx</text>
+    <text y="166">AlertSummaryTile.jsx</text>
+    <text y="180">DataSourceHealthTile.jsx</text>
+    <text y="194">QueryPerfTile.jsx</text>
+  </g>
+
+  <!-- src/features -->
+  <rect x="490" y="10" width="200" height="240" class="box"/>
+  <text x="500" y="28" class="head">src/features</text>
+  <g class="item" transform="translate(500,42)">
+    <text y="12">shell/AppShell.jsx</text>
+    <text y="26">shell/TopBar.jsx</text>
+    <text y="40">shell/LeftNav.jsx</text>
+    <text y="54">shell/BottomStatusBar.jsx</text>
+    <text y="68">shell/CommandPalette.jsx</text>
+    <text y="82">dashboard/Dashboard.jsx</text>
+    <text y="96">entities/EntityExplorer.jsx</text>
+    <text y="110">admin/Admin.jsx</text>
+    <text y="124">auth/Login.jsx</text>
+    <text y="138">boot/BootSplash.jsx</text>
+    <text y="152">placeholders/Placeholder.jsx</text>
+  </g>
+
+  <!-- src/hooks -->
+  <rect x="700" y="10" width="190" height="160" class="box"/>
+  <text x="710" y="28" class="head">src/hooks</text>
+  <g class="item" transform="translate(710,42)">
+    <text y="12">useSeed.js</text>
+    <text y="26">useLiveTick.js</text>
+    <text y="40">useEntities.js</text>
+    <text y="54">useDexie.js</text>
+    <text y="68">useRoles.js</text>
+  </g>
+
+  <!-- src/stores -->
+  <rect x="10" y="180" width="220" height="120" class="box"/>
+  <text x="20" y="198" class="head">src/stores</text>
+  <g class="item" transform="translate(20,212)">
+    <text y="12">authStore.js   (persist)</text>
+    <text y="26">uiStore.js</text>
+    <text y="40">liveStore.js   (rolling)</text>
+  </g>
+
+  <!-- src/lib -->
+  <rect x="700" y="180" width="190" height="120" class="box"/>
+  <text x="710" y="198" class="head">src/lib</text>
+  <g class="item" transform="translate(710,212)">
+    <text y="12">rbac.js</text>
+    <text y="26">audit.js</text>
+    <text y="40">format.js</text>
+    <text y="54">ids.js</text>
+    <text y="68">cn.js</text>
+  </g>
+
+  <!-- src/db -->
+  <rect x="10" y="310" width="220" height="80" class="box"/>
+  <text x="20" y="328" class="head">src/db</text>
+  <g class="item" transform="translate(20,342)">
+    <text y="12">schema.js   (Dexie v1)</text>
+  </g>
+
+  <!-- src/workers -->
+  <rect x="240" y="260" width="240" height="100" class="box"/>
+  <text x="250" y="278" class="head">src/workers</text>
+  <g class="item" transform="translate(250,292)">
+    <text y="12">seed.worker.js</text>
+    <text y="26">tick.worker.js</text>
+    <text y="40">// pwa service-worker auto-gen</text>
+  </g>
+
+  <!-- src/types -->
+  <rect x="490" y="260" width="200" height="80" class="box"/>
+  <text x="500" y="278" class="head">src/types</text>
+  <g class="item" transform="translate(500,292)">
+    <text y="12">index.js  (JSDoc @typedef)</text>
+  </g>
+
+  <!-- src/styles -->
+  <rect x="700" y="310" width="190" height="80" class="box"/>
+  <text x="710" y="328" class="head">src/styles</text>
+  <g class="item" transform="translate(710,342)">
+    <text y="12">index.css  (Tailwind)</text>
+  </g>
+
+  <!-- root files -->
+  <rect x="10" y="400" width="880" height="110" class="box"/>
+  <text x="20" y="418" class="head">/  root configuration</text>
+  <g class="item" transform="translate(20,432)">
+    <text y="12">vite.config.js  ·  tailwind.config.js  ·  postcss.config.js  ·  jsconfig.json</text>
+    <text y="28">.eslintrc.cjs   ·  .prettierrc  ·  package.json  ·  index.html  ·  src/main.jsx  ·  src/App.jsx</text>
+    <text y="44">docs/  USER_MANUAL.html  ·  ARCHITECTURE.html  ·  doc-styles.css  ·  build-pdfs.mjs</text>
+  </g>
+</svg>
+<div class="caption">DIAGRAM 3.1 · Module map (file-level)</div>
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 4. DATA FLOW                                                        -->
+<!-- =================================================================== -->
+<div class="page page-break" id="dataflow">
+<h2>4 · Runtime data flow</h2>
+
+<div class="diagram">
+<svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .b{fill:#141B23;stroke:#1F2937}
+    .t{font:600 11px 'Inter';fill:#E2E8F0;letter-spacing:0.5px}
+    .s{font:9px 'JetBrains Mono';fill:#94A3B8;letter-spacing:1px}
+    .live{stroke:#00D9FF;stroke-width:1.4;fill:none}
+    .read{stroke:#22D3A6;stroke-width:1.4;fill:none}
+    .audit{stroke:#FF4ECD;stroke-width:1.2;fill:none;stroke-dasharray:4 3}
+  </style>
+  <rect width="900" height="420" fill="#0A0E14"/>
+
+  <!-- Boot splash -->
+  <rect x="20" y="20" width="160" height="60" class="b"/>
+  <text x="100" y="42" text-anchor="middle" class="t">BOOT SPLASH</text>
+  <text x="100" y="58" text-anchor="middle" class="s">useSeed()</text>
+
+  <!-- seed worker -->
+  <rect x="220" y="20" width="180" height="60" class="b" stroke="#FFB627"/>
+  <text x="310" y="42" text-anchor="middle" class="t">SEED WORKER</text>
+  <text x="310" y="58" text-anchor="middle" class="s">50k + 200k + 500k</text>
+
+  <!-- IndexedDB -->
+  <rect x="440" y="20" width="200" height="180" class="b" stroke="#00D9FF"/>
+  <text x="540" y="42" text-anchor="middle" class="t">IndexedDB (Dexie)</text>
+  <g class="s" transform="translate(450,58)">
+    <text y="12">entities    50k</text>
+    <text y="26">relationships  200k</text>
+    <text y="40">events     500k+</text>
+    <text y="54">anomalies   240+</text>
+    <text y="68">investigations 7</text>
+    <text y="82">audit      growing</text>
+    <text y="96">users · roles · sources</text>
+    <text y="110">meta       seeded=true</text>
+  </g>
+
+  <!-- tick worker -->
+  <rect x="220" y="110" width="180" height="60" class="b" stroke="#FFB627"/>
+  <text x="310" y="132" text-anchor="middle" class="t">TICK WORKER</text>
+  <text x="310" y="148" text-anchor="middle" class="s">every 2–5s</text>
+
+  <!-- main thread bridge -->
+  <rect x="20" y="220" width="380" height="80" class="b"/>
+  <text x="210" y="244" text-anchor="middle" class="t">MAIN THREAD · useLiveTick()</text>
+  <text x="210" y="262" text-anchor="middle" class="s">pushTick(events, anomaly, metrics) →  liveStore</text>
+  <text x="210" y="280" text-anchor="middle" class="s">db.events.bulkPut · db.anomalies.put  (fire-and-forget)</text>
+
+  <!-- live store -->
+  <rect x="440" y="220" width="200" height="80" class="b" stroke="#00D9FF"/>
+  <text x="540" y="244" text-anchor="middle" class="t">liveStore (Zustand)</text>
+  <text x="540" y="262" text-anchor="middle" class="s">feed · anomalies</text>
+  <text x="540" y="280" text-anchor="middle" class="s">metrics · sparks</text>
+
+  <!-- tiles -->
+  <rect x="680" y="220" width="200" height="80" class="b"/>
+  <text x="780" y="244" text-anchor="middle" class="t">DASHBOARD TILES</text>
+  <text x="780" y="262" text-anchor="middle" class="s">subscribe via useLiveStore</text>
+  <text x="780" y="280" text-anchor="middle" class="s">+ useDexie for snapshots</text>
+
+  <!-- audit -->
+  <rect x="680" y="340" width="200" height="60" class="b" stroke="#FF4ECD"/>
+  <text x="780" y="362" text-anchor="middle" class="t">audit()</text>
+  <text x="780" y="378" text-anchor="middle" class="s">view · create · edit · login</text>
+
+  <!-- Arrows -->
+  <!-- splash -> seed worker -->
+  <path d="M180 50 L220 50" class="read" marker-end="url(#aR)"/>
+  <!-- seed -> dexie -->
+  <path d="M400 50 L440 50" class="read" marker-end="url(#aR)"/>
+  <!-- tick -> main -->
+  <path d="M310 170 L310 220" class="live" marker-end="url(#aL)"/>
+  <!-- main -> dexie -->
+  <path d="M400 240 L440 200" class="live" marker-end="url(#aL)"/>
+  <!-- main -> liveStore -->
+  <path d="M400 260 L440 260" class="live" marker-end="url(#aL)"/>
+  <!-- liveStore -> tiles -->
+  <path d="M640 260 L680 260" class="live" marker-end="url(#aL)"/>
+  <!-- dexie -> tiles -->
+  <path d="M640 100 C720 100, 760 180, 780 220" class="read" marker-end="url(#aR)"/>
+  <!-- tiles -> audit -->
+  <path d="M780 300 L780 340" class="audit" marker-end="url(#aP)"/>
+  <!-- audit -> dexie -->
+  <path d="M780 370 C620 370, 600 240, 640 200" class="audit" marker-end="url(#aP)"/>
+
+  <defs>
+    <marker id="aL" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#00D9FF"/></marker>
+    <marker id="aR" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#22D3A6"/></marker>
+    <marker id="aP" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#FF4ECD"/></marker>
+  </defs>
+
+  <!-- legend -->
+  <g transform="translate(20,360)" font-family="JetBrains Mono" font-size="9" fill="#94A3B8">
+    <line x1="0" y1="6" x2="30" y2="6" class="live"/>
+    <text x="38" y="10">live (worker → store → tile)</text>
+    <line x1="0" y1="22" x2="30" y2="22" class="read"/>
+    <text x="38" y="26">snapshot read</text>
+    <line x1="0" y1="38" x2="30" y2="38" class="audit"/>
+    <text x="38" y="42">audit write</text>
+  </g>
+</svg>
+<div class="caption">DIAGRAM 4.1 · Boot, live, snapshot, and audit data paths</div>
+</div>
+
+<h3>Three concurrent paths</h3>
+<ul>
+  <li><strong>Boot path</strong> (one-shot, green) — BootSplash → seed worker → Dexie → ready flag.</li>
+  <li><strong>Live path</strong> (continuous, cyan) — tick worker → main thread → liveStore → tiles. Persistence is fire-and-forget.</li>
+  <li><strong>Snapshot path</strong> (lazy, green) — tiles call <code>useDexie</code> on mount; results memoized until deps change.</li>
+  <li><strong>Audit path</strong> (cross-cutting, magenta) — any access calls <code>audit()</code> which writes to Dexie.</li>
+</ul>
+</div>
+
+<!-- =================================================================== -->
+<!-- 5. WORKERS                                                          -->
+<!-- =================================================================== -->
+<div class="page page-break" id="workers">
+<h2>5 · Worker topology</h2>
+
+<div class="diagram">
+<svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg">
+  <style>.b{fill:#141B23;stroke:#1F2937}.t{font:600 11px 'Inter';fill:#E2E8F0}.s{font:9px 'JetBrains Mono';fill:#94A3B8}</style>
+  <rect width="900" height="320" fill="#0A0E14"/>
+
+  <!-- main thread band -->
+  <rect x="20" y="20" width="860" height="80" class="b" stroke="#00D9FF"/>
+  <text x="32" y="40" class="t">MAIN THREAD</text>
+  <text x="32" y="58" class="s">React rendering · Dexie queries (read) · Zustand stores · routing</text>
+  <text x="32" y="74" class="s">owns: useSeed (boot) · useLiveTick (runtime) · useDexie / useEntities</text>
+
+  <!-- workers band -->
+  <rect x="20" y="120" width="280" height="180" class="b" stroke="#FFB627"/>
+  <text x="32" y="140" class="t">seed.worker.js</text>
+  <text x="32" y="156" class="s">module worker</text>
+  <text x="32" y="178" class="s">on('message', 'seed') →</text>
+  <text x="32" y="194" class="s">  seedMeta · entities · rels</text>
+  <text x="32" y="210" class="s">  events · anomalies · cases</text>
+  <text x="32" y="226" class="s">chunked bulkPut (5,000)</text>
+  <text x="32" y="246" class="s">post('progress', stage, n)</text>
+  <text x="32" y="266" class="s">post('done', durationMs)</text>
+  <text x="32" y="286" class="s">terminated by useSeed</text>
+
+  <rect x="310" y="120" width="280" height="180" class="b" stroke="#FFB627"/>
+  <text x="322" y="140" class="t">tick.worker.js</text>
+  <text x="322" y="156" class="s">module worker</text>
+  <text x="322" y="178" class="s">on('message', 'start') →</text>
+  <text x="322" y="194" class="s">  setTimeout loop 2–5s</text>
+  <text x="322" y="214" class="s">each tick:</text>
+  <text x="322" y="230" class="s">  2–8 synthetic events</text>
+  <text x="322" y="246" class="s">  18% chance: 1 anomaly</text>
+  <text x="322" y="262" class="s">  metrics (load,lat,rate)</text>
+  <text x="322" y="282" class="s">post('tick', {...})</text>
+
+  <rect x="600" y="120" width="280" height="180" class="b" stroke="#22D3A6"/>
+  <text x="612" y="140" class="t">service worker (auto)</text>
+  <text x="612" y="156" class="s">generated by vite-plugin-pwa</text>
+  <text x="612" y="178" class="s">HTML  → NetworkFirst</text>
+  <text x="612" y="198" class="s">JS/CSS/Font → CacheFirst</text>
+  <text x="612" y="218" class="s">Worker JS  → CacheFirst</text>
+  <text x="612" y="238" class="s">autoUpdate registration</text>
+  <text x="612" y="258" class="s">manifest theme #0A0E14</text>
+
+  <!-- arrows main↔workers -->
+  <path d="M120 100 V120" stroke="#00D9FF" stroke-width="1.4" fill="none" marker-end="url(#wA)"/>
+  <path d="M450 100 V120" stroke="#00D9FF" stroke-width="1.4" fill="none" marker-end="url(#wA)"/>
+  <path d="M740 100 V120" stroke="#22D3A6" stroke-width="1.4" fill="none" marker-end="url(#wB)"/>
+  <defs>
+    <marker id="wA" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#00D9FF"/></marker>
+    <marker id="wB" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#22D3A6"/></marker>
+  </defs>
+</svg>
+<div class="caption">DIAGRAM 5.1 · Three workers: seed (one-shot), tick (continuous), service worker (network)</div>
+</div>
+
+<h3>Worker protocol</h3>
+<table>
+  <thead><tr><th>Worker</th><th>Inbound</th><th>Outbound</th></tr></thead>
+  <tbody>
+    <tr><td>seed</td><td><code>{type:'seed', force?:bool}</code></td><td><code>progress · done · error</code></td></tr>
+    <tr><td>tick</td><td><code>{type:'start'}</code> / <code>{type:'stop'}</code></td><td><code>tick {events, anomaly, metrics}</code></td></tr>
+    <tr><td>pwa</td><td>browser events</td><td>cache hits / network passes</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- =================================================================== -->
+<!-- 6. SCHEMA                                                           -->
+<!-- =================================================================== -->
+<div class="page page-break" id="schema">
+<h2>6 · Dexie schema &amp; entity model</h2>
+
+<div class="diagram">
+<svg viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .tab{fill:#141B23;stroke:#1F2937}
+    .head{fill:#0F1419;stroke:#2D3748}
+    .name{font:600 11px 'Inter';fill:#E2E8F0;letter-spacing:0.5px}
+    .col{font:10px 'JetBrains Mono';fill:#94A3B8}
+    .pk{fill:#00D9FF}
+    .idx{fill:#FFB627}
+    .fk{stroke:#FF4ECD;stroke-width:1;fill:none;stroke-dasharray:3 2}
+  </style>
+  <rect width="900" height="540" fill="#0A0E14"/>
+
+  <!-- entities -->
+  <g transform="translate(20,20)">
+    <rect width="200" height="150" class="tab"/>
+    <rect width="200" height="22" class="head"/>
+    <text x="10" y="16" class="name">entities</text>
+    <g class="col" transform="translate(10,38)">
+      <text y="12"><tspan class="pk">id</tspan>  string (ULID)</text>
+      <text y="26"><tspan class="idx">type</tspan>  EntityType</text>
+      <text y="40">name  string</text>
+      <text y="54"><tspan class="idx">riskScore</tspan>  0-100</text>
+      <text y="68"><tspan class="idx">country</tspan>  ISO-2</text>
+      <text y="82">attrs  object</text>
+      <text y="96"><tspan class="idx">createdAt</tspan>  epoch</text>
+      <text y="110"><tspan class="idx">updatedAt</tspan>  epoch</text>
+    </g>
+  </g>
+
+  <!-- relationships -->
+  <g transform="translate(250,20)">
+    <rect width="200" height="150" class="tab"/>
+    <rect width="200" height="22" class="head"/>
+    <text x="10" y="16" class="name">relationships</text>
+    <g class="col" transform="translate(10,38)">
+      <text y="12"><tspan class="pk">id</tspan>  string</text>
+      <text y="26"><tspan class="idx">sourceId</tspan>  → entities.id</text>
+      <text y="40"><tspan class="idx">targetId</tspan>  → entities.id</text>
+      <text y="54"><tspan class="idx">kind</tspan>  RelationshipKind</text>
+      <text y="68">weight  0-1</text>
+      <text y="82">firstSeen  epoch</text>
+      <text y="96"><tspan class="idx">lastSeen</tspan>  epoch</text>
+    </g>
+  </g>
+
+  <!-- events -->
+  <g transform="translate(480,20)">
+    <rect width="200" height="150" class="tab"/>
+    <rect width="200" height="22" class="head"/>
+    <text x="10" y="16" class="name">events</text>
+    <g class="col" transform="translate(10,38)">
+      <text y="12"><tspan class="pk">id</tspan>  string</text>
+      <text y="26"><tspan class="idx">kind</tspan>  EventKind</text>
+      <text y="40"><tspan class="idx">entityId</tspan>  → entities.id</text>
+      <text y="54">counterpartyId  → entities.id</text>
+      <text y="68"><tspan class="idx">ts</tspan>  epoch</text>
+      <text y="82">amount  number</text>
+      <text y="96"><tspan class="idx">severity</tspan>  info|warn|crit</text>
+    </g>
+  </g>
+
+  <!-- anomalies -->
+  <g transform="translate(710,20)">
+    <rect width="170" height="150" class="tab"/>
+    <rect width="170" height="22" class="head"/>
+    <text x="10" y="16" class="name">anomalies</text>
+    <g class="col" transform="translate(10,38)">
+      <text y="12"><tspan class="pk">id</tspan>  string</text>
+      <text y="26"><tspan class="idx">entityId</tspan>  → entities</text>
+      <text y="40">reason  string</text>
+      <text y="54">score  0-100</text>
+      <text y="68"><tspan class="idx">severity</tspan></text>
+      <text y="82"><tspan class="idx">detectedAt</tspan></text>
+    </g>
+  </g>
+
+  <!-- investigations -->
+  <g transform="translate(20,200)">
+    <rect width="200" height="140" class="tab"/>
+    <rect width="200" height="22" class="head"/>
+    <text x="10" y="16" class="name">investigations</text>
+    <g class="col" transform="translate(10,38)">
+      <text y="12"><tspan class="pk">id</tspan>  string</text>
+      <text y="26">title  string</text>
+      <text y="40"><tspan class="idx">status</tspan>  open|review|closed</text>
+      <text y="54"><tspan class="idx">ownerId</tspan>  → users</text>
+      <text y="68">entityIds  string[]</text>
+      <text y="82">progress  0-100</text>
+      <text y="96"><tspan class="idx">updatedAt</tspan>  epoch</text>
+    </g>
+  </g>
+
+  <!-- audit -->
+  <g transform="translate(250,200)">
+    <rect width="200" height="140" class="tab"/>
+    <rect width="200" height="22" class="head"/>
+    <text x="10" y="16" class="name">audit</text>
+    <g class="col" transform="translate(10,38)">
+      <text y="12"><tspan class="pk">id</tspan>  auto-inc</text>
+      <text y="26"><tspan class="idx">userId</tspan>  → users.id</text>
+      <text y="40"><tspan class="idx">action</tspan>  string</text>
+      <text y="54">target  string?</text>
+      <text y="68">details  object?</text>
+      <text y="82"><tspan class="idx">ts</tspan>  epoch</text>
+    </g>
+  </g>
+
+  <!-- users -->
+  <g transform="translate(480,200)">
+    <rect width="200" height="140" class="tab"/>
+    <rect width="200" height="22" class="head"/>
+    <text x="10" y="16" class="name">users</text>
+    <g class="col" transform="translate(10,38)">
+      <text y="12"><tspan class="pk">id</tspan>  ULID</text>
+      <text y="26">name  string</text>
+      <text y="40"><tspan class="idx">email</tspan>  string</text>
+      <text y="54"><tspan class="idx">roleId</tspan>  → roles.id</text>
+      <text y="68">createdAt  epoch</text>
+    </g>
+  </g>
+
+  <!-- roles -->
+  <g transform="translate(710,200)">
+    <rect width="170" height="140" class="tab"/>
+    <rect width="170" height="22" class="head"/>
+    <text x="10" y="16" class="name">roles</text>
+    <g class="col" transform="translate(10,38)">
+      <text y="12"><tspan class="pk">id</tspan>  string</text>
+      <text y="26"><tspan class="idx">name</tspan>  string</text>
+      <text y="40">description</text>
+      <text y="54">permissions  string[]</text>
+      <text y="68">system  bool</text>
+    </g>
+  </g>
+
+  <!-- sources -->
+  <g transform="translate(20,370)">
+    <rect width="200" height="120" class="tab"/>
+    <rect width="200" height="22" class="head"/>
+    <text x="10" y="16" class="name">sources</text>
+    <g class="col" transform="translate(10,38)">
+      <text y="12"><tspan class="pk">id</tspan>  string</text>
+      <text y="26">name  string</text>
+      <text y="40"><tspan class="idx">kind</tspan>  SourceKind</text>
+      <text y="54">recordCount  number</text>
+      <text y="68">lastSync  epoch</text>
+      <text y="82"><tspan class="idx">status</tspan>  healthy|degraded|offline</text>
+    </g>
+  </g>
+
+  <!-- meta -->
+  <g transform="translate(250,370)">
+    <rect width="200" height="120" class="tab"/>
+    <rect width="200" height="22" class="head"/>
+    <text x="10" y="16" class="name">meta  (key-value)</text>
+    <g class="col" transform="translate(10,38)">
+      <text y="12"><tspan class="pk">key</tspan>  string</text>
+      <text y="26">value  any</text>
+      <text y="40">at  epoch</text>
+      <text y="60" fill="#64748B">e.g. { key:'seeded', value:true }</text>
+    </g>
+  </g>
+
+  <!-- foreign-key lines -->
+  <g class="fk">
+    <path d="M250 90 C235 90, 220 90, 220 85"/>
+    <path d="M250 104 C235 104, 220 110, 220 90"/>
+    <path d="M480 110 C460 110, 440 90, 220 85"/>
+    <path d="M710 100 C695 100, 600 110, 480 100"/>
+    <path d="M250 274 C240 274, 220 230, 220 230"/>
+    <path d="M480 250 C465 250, 450 280, 220 280"/>
+    <path d="M710 244 C695 244, 600 244, 480 244"/>
+  </g>
+
+  <!-- legend -->
+  <g transform="translate(480,420)" font-family="JetBrains Mono" font-size="10" fill="#94A3B8">
+    <text x="0" y="0" fill="#00D9FF">pk</text><text x="20" y="0">primary key</text>
+    <text x="120" y="0" fill="#FFB627">idx</text><text x="142" y="0">indexed</text>
+    <text x="220" y="0" fill="#FF4ECD">→</text><text x="232" y="0">foreign reference (logical)</text>
+  </g>
+</svg>
+<div class="caption">DIAGRAM 6.1 · Dexie ERD — ten object stores</div>
+</div>
+
+<p>Dexie schema is defined in <code>src/db/schema.js</code> at <code>version(1)</code>. Index strings:</p>
+<table>
+<tbody>
+  <tr><td><code>entities</code></td><td class="mono">id, type, riskScore, country, createdAt, updatedAt, *tags</td></tr>
+  <tr><td><code>relationships</code></td><td class="mono">id, sourceId, targetId, kind, lastSeen, [sourceId+kind], [targetId+kind]</td></tr>
+  <tr><td><code>events</code></td><td class="mono">id, kind, entityId, ts, severity, [entityId+ts]</td></tr>
+  <tr><td><code>anomalies</code></td><td class="mono">id, entityId, severity, detectedAt</td></tr>
+  <tr><td><code>investigations</code></td><td class="mono">id, status, ownerId, updatedAt</td></tr>
+  <tr><td><code>audit</code></td><td class="mono">++id, userId, action, ts</td></tr>
+  <tr><td><code>users / roles / sources / meta</code></td><td class="mono">id (or key)</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- =================================================================== -->
+<!-- 7. STATE                                                            -->
+<!-- =================================================================== -->
+<div class="page page-break" id="state">
+<h2>7 · State management</h2>
+<p>Three Zustand stores. None of them subscribe to Dexie directly — that
+responsibility lives in hooks.</p>
+
+<table>
+  <thead><tr><th>Store</th><th>Owns</th><th>Persistence</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>authStore</code></td>
+      <td><code>user</code>, <code>login()</code>, <code>logout()</code></td>
+      <td><code>localStorage</code> key <code>atlantis.auth</code></td>
+    </tr>
+    <tr>
+      <td><code>uiStore</code></td>
+      <td>nav collapse, inspector open, palette open</td>
+      <td>in-memory only</td>
+    </tr>
+    <tr>
+      <td><code>liveStore</code></td>
+      <td>rolling event feed (200), rolling anomalies (80), 60-sample sparklines, cumulative metrics</td>
+      <td>in-memory; re-hydrated by tick worker</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Why Zustand and not Context?</h3>
+<ul>
+  <li>Tile re-render granularity. Selectors mean a tile only re-renders when its slice changes.</li>
+  <li>No provider tree boilerplate.</li>
+  <li>Middleware hooks (<code>persist</code>) are first-class.</li>
+</ul>
+</div>
+
+<!-- =================================================================== -->
+<!-- 8. RBAC                                                             -->
+<!-- =================================================================== -->
+<div class="page page-break" id="rbac">
+<h2>8 · RBAC model</h2>
+
+<div class="diagram">
+<svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .b{fill:#141B23;stroke:#1F2937}.t{font:600 11px 'Inter';fill:#E2E8F0}.s{font:9px 'JetBrains Mono';fill:#94A3B8}
+    .a{stroke:#00D9FF;stroke-width:1.4;fill:none}
+  </style>
+  <rect width="900" height="320" fill="#0A0E14"/>
+
+  <rect x="20" y="100" width="160" height="80" class="b"/>
+  <text x="100" y="124" text-anchor="middle" class="t">USER</text>
+  <text x="100" y="142" text-anchor="middle" class="s">id · name</text>
+  <text x="100" y="158" text-anchor="middle" class="s">roleId →</text>
+
+  <rect x="240" y="100" width="160" height="80" class="b"/>
+  <text x="320" y="124" text-anchor="middle" class="t">ROLE</text>
+  <text x="320" y="142" text-anchor="middle" class="s">name · description</text>
+  <text x="320" y="158" text-anchor="middle" class="s">permissions[]</text>
+
+  <rect x="460" y="20" width="200" height="80" class="b" stroke="#22D3A6"/>
+  <text x="560" y="44" text-anchor="middle" class="t" fill="#22D3A6">READ</text>
+  <text x="560" y="62" text-anchor="middle" class="s">view_entities</text>
+  <text x="560" y="78" text-anchor="middle" class="s">view_relationships</text>
+  <text x="560" y="94" text-anchor="middle" class="s">view_events · view_audit</text>
+
+  <rect x="460" y="120" width="200" height="80" class="b" stroke="#FFB627"/>
+  <text x="560" y="144" text-anchor="middle" class="t" fill="#FFB627">WRITE</text>
+  <text x="560" y="162" text-anchor="middle" class="s">edit_entities</text>
+  <text x="560" y="178" text-anchor="middle" class="s">open_investigations</text>
+  <text x="560" y="194" text-anchor="middle" class="s">export_data</text>
+
+  <rect x="460" y="220" width="200" height="80" class="b" stroke="#FF4ECD"/>
+  <text x="560" y="244" text-anchor="middle" class="t" fill="#FF4ECD">ADMIN</text>
+  <text x="560" y="262" text-anchor="middle" class="s">manage_users</text>
+  <text x="560" y="278" text-anchor="middle" class="s">manage_roles</text>
+
+  <rect x="700" y="100" width="180" height="80" class="b"/>
+  <text x="790" y="124" text-anchor="middle" class="t">can(user, roles, perm)</text>
+  <text x="790" y="142" text-anchor="middle" class="s">lib/rbac.js</text>
+  <text x="790" y="158" text-anchor="middle" class="s">→ boolean</text>
+
+  <path d="M180 140 L240 140" class="a" marker-end="url(#rA)"/>
+  <path d="M400 140 L460 60" class="a" marker-end="url(#rA)"/>
+  <path d="M400 140 L460 160" class="a" marker-end="url(#rA)"/>
+  <path d="M400 140 L460 260" class="a" marker-end="url(#rA)"/>
+  <path d="M660 140 L700 140" class="a" marker-end="url(#rA)"/>
+  <defs>
+    <marker id="rA" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#00D9FF"/></marker>
+  </defs>
+</svg>
+<div class="caption">DIAGRAM 8.1 · User → Role → Permissions → can()</div>
+</div>
+
+<p>Source of truth: <code>src/lib/rbac.js</code>. Helper:</p>
+<pre class="panel mono" style="white-space:pre-wrap">can(user, roles, 'view_audit') // → true / false</pre>
+<p>Phase 2 will introduce route guards and a <code>&lt;Permitted permission="..."&gt;</code>
+helper component that returns <code>null</code> when permission is missing.</p>
+</div>
+
+<!-- =================================================================== -->
+<!-- 9. OFFLINE                                                          -->
+<!-- =================================================================== -->
+<div class="page page-break" id="offline">
+<h2>9 · Offline strategy &amp; service worker</h2>
+<p>Configured in <code>vite.config.js</code> via <code>vite-plugin-pwa</code>:</p>
+<table>
+  <thead><tr><th>Resource</th><th>Strategy</th><th>Cache</th></tr></thead>
+  <tbody>
+    <tr><td>HTML document</td><td>NetworkFirst</td><td><code>atlantis-html</code></td></tr>
+    <tr><td>JS / CSS / fonts / workers</td><td>CacheFirst</td><td><code>atlantis-assets</code></td></tr>
+    <tr><td>App data</td><td>n/a — never network</td><td>IndexedDB</td></tr>
+    <tr><td>Map tiles</td><td>browser default</td><td>Phase 3: pre-cached MBTiles</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>Boot sequencing.</strong> Even when the service worker has cached the bundle,
+  the first page load still has to wait for the seed worker on devices with empty
+  IndexedDB. Splash UX makes this acceptable.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 10. PERFORMANCE                                                     -->
+<!-- =================================================================== -->
+<div class="page page-break" id="perf">
+<h2>10 · Performance budget</h2>
+<table>
+  <thead><tr><th>Surface</th><th>Target</th><th>Mechanism</th></tr></thead>
+  <tbody>
+    <tr><td>50k-row scroll</td><td>60 fps</td><td>react-virtuoso, <code>react-window</code>-style windowing</td></tr>
+    <tr><td>Dashboard first render after seed</td><td>&lt; 2 s</td><td>Code-split, lazy-load heavy modules (force-graph)</td></tr>
+    <tr><td>Live tick → tile repaint</td><td>&lt; 16 ms</td><td>Zustand selector slicing, no Context</td></tr>
+    <tr><td>Seed (50k+200k+500k)</td><td>10–60 s first run</td><td>Chunked <code>bulkPut</code> (5,000 / batch) inside worker</td></tr>
+    <tr><td>Anomaly write</td><td>fire-and-forget</td><td>No <code>await</code> on persist path</td></tr>
+  </tbody>
+</table>
+
+<h3>Anti-patterns we explicitly avoid</h3>
+<ul>
+  <li>Reading the entire entities table on render — only the inspector / dashboard does bounded reads.</li>
+  <li>Cross-component prop drilling for live data — every consumer subscribes to <code>liveStore</code>.</li>
+  <li>Heavy chart libs on first paint — <code>react-force-graph-2d</code> is dynamically imported by the GraphPreviewTile.</li>
+</ul>
+</div>
+
+<!-- =================================================================== -->
+<!-- 11. SECURITY                                                        -->
+<!-- =================================================================== -->
+<div class="page page-break" id="security">
+<h2>11 · Security model</h2>
+<p>
+ATLANTIS is offline-first, so the threat model is bounded but not empty. Risks:
+</p>
+<table>
+  <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+  <tbody>
+    <tr><td>Operator with browser access can read IndexedDB raw</td><td>Treat the host machine as a trust boundary; encrypt at rest with FDE.</td></tr>
+    <tr><td>XSS via injected entity name</td><td>React escapes by default; no <code>dangerouslySetInnerHTML</code> anywhere.</td></tr>
+    <tr><td>Stale role after revocation</td><td>Roles re-read every 3s by <code>useRoles</code>; Phase 2 adds an in-app force-reauth.</td></tr>
+    <tr><td>Audit tampering</td><td>Audit is append-only via Dexie auto-increment; Phase 3 adds a hash-chain.</td></tr>
+    <tr><td>Service-worker cache poisoning</td><td>HTML uses NetworkFirst so a fresh bundle always supersedes cache when online.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- =================================================================== -->
+<!-- 12. ROADMAP                                                         -->
+<!-- =================================================================== -->
+<div class="page page-break" id="extensibility">
+<h2>12 · Extensibility &amp; roadmap</h2>
+
+<h3>Adding a new tile</h3>
+<ol>
+  <li>Create <code>src/components/tiles/MyTile.jsx</code> using <code>&lt;Tile title=… live? footer=…&gt;</code>.</li>
+  <li>Get data via <code>useDexie</code> (snapshot) or <code>useLiveStore</code> (live).</li>
+  <li>Export from <code>src/components/tiles/index.js</code>.</li>
+  <li>Place it on the grid in <code>src/features/dashboard/Dashboard.jsx</code> with a <code>span="col-span-N row-span-M"</code> class.</li>
+</ol>
+
+<h3>Adding a new screen</h3>
+<ol>
+  <li>Create <code>src/features/&lt;screen&gt;/Screen.jsx</code>.</li>
+  <li>Register a <code>&lt;Route&gt;</code> in <code>src/App.jsx</code> under the <code>Protected</code> shell.</li>
+  <li>Add a nav entry in <code>src/features/shell/LeftNav.jsx</code>.</li>
+</ol>
+
+<h3>Adding a new permission</h3>
+<ol>
+  <li>Add to <code>ALL_PERMISSIONS</code> in <code>src/lib/rbac.js</code> with its group.</li>
+  <li>Bump built-in role definitions if appropriate.</li>
+  <li>Add gate logic at the call site via <code>can(user, roles, 'your_perm')</code>.</li>
+</ol>
+
+<h3>Phase 2 / 3 (planned)</h3>
+<table>
+  <thead><tr><th>Phase</th><th>Architectural change</th></tr></thead>
+  <tbody>
+    <tr><td>2</td><td>Route guards driven by <code>can()</code>; <code>&lt;Permitted&gt;</code> helper component</td></tr>
+    <tr><td>2</td><td>Graph layout worker (Web Worker offloading d3-force calculations)</td></tr>
+    <tr><td>2</td><td>Query language → tokenizer/parser in lib; chip-based input UI</td></tr>
+    <tr><td>3</td><td>Hash-chained audit (each entry stores hash of previous)</td></tr>
+    <tr><td>3</td><td>Offline tile pack (MBTiles in IndexedDB, custom Leaflet tile-layer)</td></tr>
+    <tr><td>3</td><td>Pluggable anomaly models in worker pool</td></tr>
+  </tbody>
+</table>
+
+<div class="footer-bar">
+  <span>ATLANTIS · ARCHITECTURE · v0.1 · END OF DOCUMENT</span>
+  <span>RESTRICTED · INTERNAL USE</span>
+</div>
+</div>
+
+</body>
+</html>

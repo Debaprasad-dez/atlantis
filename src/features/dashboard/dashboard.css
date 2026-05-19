@@ -1,0 +1,87 @@
+/* Dashboard responsive grid.
+ *
+ * The grid template — including which cells exist — changes per breakpoint.
+ * Each tile carries one grid-area class (dash-ts, dash-geo, …). When the
+ * template at the current breakpoint defines that area name, the tile occupies
+ * it; otherwise the tile auto-flows into the next available row.
+ */
+
+.dashboard-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(14, minmax(72px, 1fr));
+  min-height: 1080px;
+  grid-template-areas:
+    "ts   ts   ts   ts   ts   geo  geo  geo  geo  feed feed feed"
+    "ts   ts   ts   ts   ts   geo  geo  geo  geo  feed feed feed"
+    "ts   ts   ts   ts   ts   geo  geo  geo  geo  feed feed feed"
+    "ts   ts   ts   ts   ts   geo  geo  geo  geo  feed feed feed"
+    "cnt  cnt  cnt  alt  alt  geo  geo  geo  geo  feed feed feed"
+    "cnt  cnt  cnt  alt  alt  geo  geo  geo  geo  feed feed feed"
+    "dist dist dist dist dist anom anom anom anom qp   qp   qp"
+    "dist dist dist dist dist anom anom anom anom qp   qp   qp"
+    "dist dist dist dist dist anom anom anom anom qp   qp   qp"
+    "top  top  top  top  top  anom anom anom anom inv  inv  inv"
+    "top  top  top  top  top  gph  gph  gph  gph  inv  inv  inv"
+    "top  top  top  top  top  gph  gph  gph  gph  inv  inv  inv"
+    "src  src  src  src  src  src  aud  aud  aud  aud  aud  aud"
+    "src  src  src  src  src  src  aud  aud  aud  aud  aud  aud";
+}
+
+.dash-ts   { grid-area: ts; }
+.dash-geo  { grid-area: geo; }
+.dash-feed { grid-area: feed; }
+.dash-cnt  { grid-area: cnt; }
+.dash-alt  { grid-area: alt; }
+.dash-dist { grid-area: dist; }
+.dash-anom { grid-area: anom; }
+.dash-qp   { grid-area: qp; }
+.dash-top  { grid-area: top; }
+.dash-gph  { grid-area: gph; }
+.dash-inv  { grid-area: inv; }
+.dash-src  { grid-area: src; }
+.dash-aud  { grid-area: aud; }
+
+/* Medium — laptops / portrait-tablet landscape: 6-col grid with re-mapped areas. */
+@media (max-width: 1279px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: minmax(140px, auto);
+    min-height: 0;
+    grid-template-areas:
+      "ts   ts   ts   ts   ts   ts"
+      "ts   ts   ts   ts   ts   ts"
+      "ts   ts   ts   ts   ts   ts"
+      "geo  geo  geo  feed feed feed"
+      "geo  geo  geo  feed feed feed"
+      "geo  geo  geo  feed feed feed"
+      "cnt  cnt  cnt  alt  alt  alt"
+      "cnt  cnt  cnt  alt  alt  alt"
+      "dist dist dist anom anom anom"
+      "dist dist dist anom anom anom"
+      "dist dist dist anom anom anom"
+      "top  top  top  inv  inv  inv"
+      "top  top  top  inv  inv  inv"
+      "gph  gph  gph  qp   qp   qp"
+      "gph  gph  gph  qp   qp   qp"
+      "src  src  src  aud  aud  aud"
+      "src  src  src  aud  aud  aud";
+  }
+}
+
+/* Narrow — phones / split-screen: single column. Tiles flow naturally; we
+ * deliberately drop grid-template-areas so the grid-area: <name> declarations
+ * fall back to auto-placement on a 1-col grid. */
+@media (max-width: 767px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: none;
+    grid-auto-rows: 240px;
+  }
+  .dash-ts, .dash-geo, .dash-feed, .dash-cnt, .dash-alt, .dash-dist,
+  .dash-anom, .dash-qp, .dash-top, .dash-gph, .dash-inv, .dash-src, .dash-aud {
+    grid-area: auto;
+  }
+}
