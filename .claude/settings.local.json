@@ -14,7 +14,11 @@
       "Bash(for f in \"src\\\\components\\\\tiles\\\\TopEntitiesTile.jsx\" \"src\\\\components\\\\tiles\\\\AnomalyScoreTile.jsx\" \"src\\\\components\\\\tiles\\\\InvestigationsTile.jsx\" \"src\\\\components\\\\tiles\\\\AuditTile.jsx\" \"src\\\\components\\\\tiles\\\\DataSourceHealthTile.jsx\" \"src\\\\components\\\\tiles\\\\DistributionTile.jsx\" \"src\\\\components\\\\tiles\\\\GraphPreviewTile.jsx\"; do *)",
       "Read(//c/Users/debap/Desktop/**)",
       "Bash(ls \"C:\\\\Users\\\\debap\\\\.claude\\\\projects\\\\\" 2>/dev/null || echo \"no dir\")",
-      "Read(//c/Users/debap/.claude/projects\" 2>/dev/**)"
+      "Read(//c/Users/debap/.claude/projects\" 2>/dev/**)",
+      "Bash(gh auth *)",
+      "Bash(npm list *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
