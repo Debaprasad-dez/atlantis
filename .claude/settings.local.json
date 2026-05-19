@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "Bash(npm install *)",
+      "Bash(npm test *)",
+      "Bash(grep -i \"fail\" /tmp/test-out.txt | head -30)",
+      "Read(//tmp/**)",
+      "Bash(grep -E \"ENT-EX|TestingLibrary|Unable to find|Worker exited|^ {3,4}× \" /tmp/test-out.txt)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\debap\\\\Desktop\\\\ATLANTIS\" -Force)",
+      "Bash(Select-Object Name, FullName, PSIsContainer)",
+      "Bash(for f in \"src\\\\components\\\\tiles\\\\TopEntitiesTile.jsx\" \"src\\\\components\\\\tiles\\\\AnomalyScoreTile.jsx\" \"src\\\\components\\\\tiles\\\\InvestigationsTile.jsx\" \"src\\\\components\\\\tiles\\\\AuditTile.jsx\" \"src\\\\components\\\\tiles\\\\DataSourceHealthTile.jsx\" \"src\\\\components\\\\tiles\\\\DistributionTile.jsx\" \"src\\\\components\\\\tiles\\\\GraphPreviewTile.jsx\"; do *)",
+      "Read(//c/Users/debap/Desktop/**)",
+      "Bash(ls \"C:\\\\Users\\\\debap\\\\.claude\\\\projects\\\\\" 2>/dev/null || echo \"no dir\")",
+      "Read(//c/Users/debap/.claude/projects\" 2>/dev/**)",
+      "Bash(gh auth *)",
+      "Bash(npm list *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
