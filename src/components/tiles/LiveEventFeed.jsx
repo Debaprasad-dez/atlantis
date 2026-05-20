@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Tile, Modal, FilterChip, KV } from '@/components/primitives';
 import { useLiveStore } from '@/stores/liveStore';
 import { fmtTime, fmtMoney, fmtDateTime } from '@/lib/format';
@@ -22,6 +23,7 @@ const SEV_DOT = {
 
 /** Live event feed with pause/resume, severity quick-filter, click-to-inspect, and menu actions. */
 export function LiveEventFeed({ span }) {
+  const navigate = useNavigate();
   const feed = useLiveStore((s) => s.feed);
   const paused = useLiveStore((s) => s.paused);
   const togglePaused = useLiveStore((s) => s.togglePaused);
@@ -140,13 +142,16 @@ export function LiveEventFeed({ span }) {
               >
                 COPY JSON
               </button>
-              <a
-                href={`/entities?focus=${selected.entityId}`}
+              <button
+                type="button"
                 className="btn btn-primary"
-                onClick={() => setSelected(null)}
+                onClick={() => {
+                  setSelected(null);
+                  navigate(`/entities?focus=${selected.entityId}`);
+                }}
               >
                 OPEN ENTITY →
-              </a>
+              </button>
             </div>
           </div>
         ) : null}

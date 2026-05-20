@@ -6,9 +6,10 @@ import { db } from '@/db/schema';
 
 beforeEach(() => {
   useAuthStore.setState({ user: null });
-  // BrowserRouter reads window.location; reset between tests so a prior
-  // <Navigate to="/login"> doesn't leak into the next test.
-  window.history.replaceState({}, '', '/');
+  // BrowserRouter uses basename="/atlantis"; jsdom must start inside that prefix
+  // or the router renders nothing. Reset to the basename root between tests so a
+  // prior <Navigate to="/login"> doesn't leak into the next test.
+  window.history.replaceState({}, '', '/atlantis/');
 });
 
 describe('App routing', () => {
