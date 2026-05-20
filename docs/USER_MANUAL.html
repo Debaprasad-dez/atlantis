@@ -1091,7 +1091,7 @@ Implementation lives in <code>src/lib/query.js</code>.
 clause       := field ":" value
 field        := "type" | "country" | "tag" | "risk" | "name" | "id"
 value        := comparison | range | list | string
-comparison   := (">"|"<"|">="|"<="|"=") number
+comparison   := ("&gt;"|"&lt;"|"&gt;="|"&lt;="|"=") number
 range        := number ".." number
 list         := value ("," value)+
 string       := unquoted | "quoted with spaces"</code></pre>
