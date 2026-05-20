@@ -1,0 +1,1513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ATLANTIS — User Manual</title>
+<link rel="stylesheet" href="doc-styles.css" />
+</head>
+<body>
+
+<!-- =================================================================== -->
+<!-- COVER                                                               -->
+<!-- =================================================================== -->
+<div class="cover">
+  <div class="brand">
+    <span class="mark"></span>
+    <span>ATLANTIS // FRAUD INTELLIGENCE</span>
+  </div>
+
+  <div>
+    <h1>User Manual</h1>
+    <div class="subtitle">Operator's Field Guide</div>
+    <div class="meta">
+      <div><b>v0.3.0</b>Document version</div>
+      <div><b>Phase 3</b>Build phase</div>
+      <div><b>Offline</b>Deployment mode</div>
+      <div><b>3 + custom</b>Roles supported</div>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <span>ATLANTIS · USER MANUAL · v0.3</span>
+    <span>RESTRICTED · INTERNAL USE</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- TOC                                                                 -->
+<!-- =================================================================== -->
+<div class="page page-break">
+<h2>Contents</h2>
+<div class="toc">
+<ol>
+  <li><a href="#intro">Introduction &amp; getting started</a></li>
+  <li><a href="#shell">The application shell</a></li>
+  <li><a href="#roles">Roles &amp; permissions</a></li>
+  <li><a href="#login">Sign-in &amp; session</a></li>
+  <li><a href="#dashboard">Dashboard — 14 live tiles</a></li>
+  <li><a href="#entities">Entity Explorer</a></li>
+  <li><a href="#graph">Graph View</a></li>
+  <li><a href="#investigations">Investigation Workspace</a></li>
+  <li><a href="#auditlog">Audit Log screen</a></li>
+  <li><a href="#geo">Geospatial View</a></li>
+  <li><a href="#anomalies">Anomaly Tuning</a></li>
+  <li><a href="#reports">Report Builder</a></li>
+  <li><a href="#query">Query language</a></li>
+  <li><a href="#admin">Admin &amp; custom role builder</a></li>
+  <li><a href="#palette">Command palette &amp; shortcuts</a></li>
+  <li><a href="#workflows">Common workflows</a></li>
+  <li><a href="#audit">Audit &amp; compliance</a></li>
+  <li><a href="#offline">Offline mode</a></li>
+  <li><a href="#glossary">Glossary</a></li>
+  <li><a href="#roadmap">Phase 4 / future</a></li>
+</ol>
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 1. INTRODUCTION                                                     -->
+<!-- =================================================================== -->
+<div class="page page-break" id="intro">
+<h2>1 · Introduction</h2>
+<p>
+ATLANTIS is a self-contained, browser-based fraud-intelligence workbench. It runs
+<strong>entirely offline</strong>: no server calls, no telemetry, no external dependencies
+once the application bundle is cached. All data lives in IndexedDB on the operator's
+machine.
+</p>
+
+<h3>Who this manual is for</h3>
+<ul>
+  <li><strong>Analysts</strong> — daily monitoring of the dashboard and entity browsing.</li>
+  <li><strong>Investigators</strong> — opening cases, deeper relationship exploration, exports.</li>
+  <li><strong>Admins</strong> — managing operators, roles, and the data sources panel.</li>
+</ul>
+
+<h3>What you can do right now</h3>
+<table>
+  <thead><tr><th>Capability</th><th>Where</th><th>Required permission</th></tr></thead>
+  <tbody>
+    <tr><td>Watch live event stream</td><td>Dashboard</td><td><code>view_events</code></td></tr>
+    <tr><td>Browse 50k+ entities with filters</td><td>Entity Explorer</td><td><code>view_entities</code></td></tr>
+    <tr><td>Inspect risk score &amp; related events</td><td>Inspector panel</td><td><code>view_entities</code></td></tr>
+    <tr><td>Explore the relationship graph</td><td>Graph View</td><td><code>view_relationships</code></td></tr>
+    <tr><td>Open / work cases with notes &amp; evidence</td><td>Investigation Workspace</td><td><code>open_investigations</code></td></tr>
+    <tr><td>Filter &amp; export the full audit trail</td><td>Audit Log</td><td><code>view_audit</code> + <code>export_data</code></td></tr>
+    <tr><td>Plot entities on a clustered map</td><td>Geospatial View</td><td><code>view_entities</code></td></tr>
+    <tr><td>Tune the anomaly model &amp; write detections</td><td>Anomaly Tuning</td><td><code>view_events</code></td></tr>
+    <tr><td>Build &amp; print investigation reports</td><td>Report Builder</td><td><code>export_data</code></td></tr>
+    <tr><td>Filter with a chip-based query language</td><td>Entity Explorer · Reports</td><td><code>view_entities</code></td></tr>
+    <tr><td>Define custom roles</td><td>Admin → Roles</td><td><code>manage_roles</code></td></tr>
+    <tr><td>Review every data access</td><td>Recent Audit tile</td><td><code>view_audit</code></td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>First boot.</strong> On first launch the seed worker populates IndexedDB with
+  50,000 entities, 200,000 relationships, and 500,000 events. The BOOT SEQUENCE splash
+  shows live progress per stage. Subsequent launches are instant.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 2. APPLICATION SHELL                                                -->
+<!-- =================================================================== -->
+<div class="page page-break" id="shell">
+<h2>2 · The application shell</h2>
+<p>Every screen sits inside the same four-region shell. Learn the regions once and
+the rest of the UI is self-explanatory.</p>
+
+<!-- DIAGRAM: app shell layout -->
+<div class="diagram">
+<svg viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#1F2937" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="900" height="480" fill="#0A0E14"/>
+  <rect width="900" height="480" fill="url(#grid)"/>
+
+  <!-- Top bar -->
+  <rect x="0" y="0" width="900" height="36" fill="#0F1419" stroke="#2D3748"/>
+  <rect x="10" y="10" width="14" height="14" fill="none" stroke="#00D9FF"/>
+  <rect x="12" y="12" width="10" height="10" fill="#00D9FF" opacity="0.3"/>
+  <text x="32" y="22" fill="#E2E8F0" font-family="Inter" font-size="12" font-weight="600" letter-spacing="2">ATLANTIS</text>
+  <rect x="160" y="9" width="280" height="18" fill="#0A0E14" stroke="#1F2937"/>
+  <text x="170" y="22" fill="#64748B" font-family="JetBrains Mono" font-size="10">⌕  Search entities, events, actions…</text>
+  <circle cx="640" cy="18" r="3" fill="#00D9FF"/>
+  <text x="650" y="22" fill="#94A3B8" font-family="JetBrains Mono" font-size="9">STREAM · 4 ev/s</text>
+  <circle cx="760" cy="18" r="3" fill="#FF4747"/>
+  <text x="770" y="22" fill="#94A3B8" font-family="JetBrains Mono" font-size="9">12 ALERTS</text>
+  <rect x="860" y="9" width="18" height="18" fill="#141B23" stroke="#2D3748"/>
+  <text x="869" y="22" fill="#E2E8F0" font-family="Inter" font-size="10" text-anchor="middle" font-weight="600">A</text>
+
+  <!-- Left nav -->
+  <rect x="0" y="36" width="160" height="408" fill="#0F1419" stroke="#1F2937"/>
+  <text x="10" y="55" fill="#64748B" font-family="JetBrains Mono" font-size="9" letter-spacing="1.5">NAVIGATION</text>
+  <g font-family="Inter" font-size="10" fill="#94A3B8">
+    <rect x="0" y="64" width="160" height="22" fill="rgba(0,217,255,0.08)"/>
+    <rect x="0" y="64" width="2" height="22" fill="#00D9FF"/>
+    <text x="14" y="78" fill="#E2E8F0">◫  Dashboard</text>
+    <text x="14" y="100" >◉  Entities</text>
+    <text x="14" y="122" >⬢  Graph</text>
+    <text x="14" y="144" >⌬  Cases</text>
+    <text x="14" y="166" >◎  Geospatial</text>
+    <text x="14" y="188" >△  Anomalies</text>
+    <text x="14" y="210" >☰  Audit log</text>
+    <text x="14" y="232" >⚙  Admin</text>
+  </g>
+
+  <!-- Main content -->
+  <rect x="160" y="36" width="740" height="408" fill="#0A0E14"/>
+  <text x="530" y="240" fill="#475569" font-family="Inter" font-size="14" text-anchor="middle" letter-spacing="3">MAIN CONTENT AREA</text>
+  <text x="530" y="262" fill="#64748B" font-family="JetBrains Mono" font-size="10" text-anchor="middle">dashboard · explorer · cases · admin · …</text>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="444" width="900" height="24" fill="#0F1419" stroke="#2D3748"/>
+  <g font-family="JetBrains Mono" font-size="9" fill="#64748B">
+    <circle cx="10" cy="456" r="3" fill="#22D3A6"/>
+    <text x="18" y="459">OFFLINE-OK</text>
+    <text x="100" y="459">Records 750K</text>
+    <text x="190" y="459">+12.4K ingested</text>
+    <text x="290" y="459">Load 32%</text>
+    <text x="360" y="459">Q-Lat 41ms</text>
+    <text x="445" y="459">Sync 12s ago</text>
+    <text x="540" y="459">USER  J. ORTEGA</text>
+    <text x="650" y="459">⌘K Palette</text>
+    <text x="730" y="459">G E Entities</text>
+    <text x="810" y="459">14:32:08Z</text>
+  </g>
+
+  <!-- Labels -->
+  <g font-family="JetBrains Mono" font-size="9" fill="#FFB627">
+    <text x="100" y="14">1 · TOP BAR</text>
+    <text x="60" y="50" text-anchor="middle">2 · LEFT NAV</text>
+    <text x="530" y="55" text-anchor="middle">3 · MAIN CONTENT</text>
+    <text x="100" y="476">4 · BOTTOM STATUS BAR</text>
+  </g>
+</svg>
+<div class="caption">DIAGRAM 2.1 · Application shell, four regions</div>
+</div>
+
+<h3>1 — Top bar</h3>
+<p>Brand on the left, global search + command palette trigger in the middle, live
+stream &amp; alert counters on the right, then the operator avatar with a sign-out
+control.</p>
+
+<h3>2 — Left navigation</h3>
+<p>Persistent vertical rail with a cyan accent stripe on the active route. The
+rail links every shipped screen: Dashboard, Entities, Graph, Cases, Geospatial,
+Anomalies, Audit, Admin, Reports. Each link is gated by a <code>RouteGuard</code>;
+unauthorised navigation redirects to the dashboard.</p>
+
+<h3>3 — Main content</h3>
+<p>The active screen. Each screen owns its own internal layout — typically with
+left-rail facets, a centre workspace, and a right-side inspector. Most
+multi-pane screens use the <code>Splitter</code> primitive, so the rails are
+user-resizable; widths persist per-pane in <code>localStorage</code>.</p>
+
+<h3>4 — Bottom status bar</h3>
+<p>System telemetry at a glance: connection state, record counts, ingestion delta,
+system load, query latency, current operator, keyboard hints, and UTC clock.</p>
+
+<h3>Shared UI primitives</h3>
+<p>
+Every screen draws from the same primitive set in
+<code>src/components/primitives/</code>. A few you'll encounter most often:
+</p>
+<ul>
+  <li><strong>Splitter</strong> — drag the 4px hairline between rails to resize. Widths persist per-instance.</li>
+  <li><strong>Inspector</strong> — the standard right-rail detail pane with a header bar and close affordance.</li>
+  <li><strong>FilterChip</strong> — the small toggle chips used for facets, edge kinds, severity, time ranges.</li>
+  <li><strong>RiskBar</strong> — a 0–100 risk indicator coloured by band (cyan / amber / red).</li>
+  <li><strong>Modal</strong> &amp; <strong>Menu</strong> — used by the Admin role editor, the Anomaly Tuning save prompt, and similar transient surfaces.</li>
+  <li><strong>Skeleton</strong> — the scanning-shimmer placeholder shown while large tables stream rows.</li>
+  <li><strong>Toasts</strong> — the bottom-right confirmation layer (success / info / warning / error). Backed by <code>toastStore</code> and used by every save / apply / delete action.</li>
+</ul>
+</div>
+
+<!-- =================================================================== -->
+<!-- 3. ROLES                                                            -->
+<!-- =================================================================== -->
+<div class="page page-break" id="roles">
+<h2>3 · Roles &amp; permissions</h2>
+<p>
+ATLANTIS ships with three built-in roles and a builder for unlimited custom roles.
+Every screen and every action is gated by one or more permissions; if your role is
+missing a required permission, the UI element is hidden or returns an "Insufficient
+permission" error.
+</p>
+
+<h3>Permission catalogue</h3>
+<table>
+  <thead>
+    <tr><th>Group</th><th>Permission</th><th>Grants</th></tr>
+  </thead>
+  <tbody>
+    <tr><td rowspan="4">Read</td>
+        <td class="mono">view_entities</td><td>Open Entity Explorer, view entity details</td></tr>
+    <tr><td class="mono">view_relationships</td><td>See the Graph tile and full Graph View</td></tr>
+    <tr><td class="mono">view_events</td><td>Watch the live feed; see the time-series + anomaly tiles</td></tr>
+    <tr><td class="mono">view_audit</td><td>Read the Audit Log screen and tile</td></tr>
+    <tr><td rowspan="3">Write</td>
+        <td class="mono">edit_entities</td><td>Tag, annotate, attach evidence to an entity</td></tr>
+    <tr><td class="mono">open_investigations</td><td>Create cases and add entities to them</td></tr>
+    <tr><td class="mono">export_data</td><td>CSV / JSON export of query results</td></tr>
+    <tr><td rowspan="2">Admin</td>
+        <td class="mono">manage_users</td><td>Create, edit, deactivate operator accounts</td></tr>
+    <tr><td class="mono">manage_roles</td><td>Create custom roles &amp; edit built-ins</td></tr>
+  </tbody>
+</table>
+
+<h3>Built-in roles</h3>
+
+<table>
+  <thead>
+    <tr><th>Role</th><th>Read</th><th>Write</th><th>Admin</th><th>Typical user</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Analyst</strong><br/><span class="chip">system</span></td>
+      <td>entities, relationships, events</td>
+      <td>—</td>
+      <td>—</td>
+      <td>Tier-1 monitoring, dashboard watch</td>
+    </tr>
+    <tr>
+      <td><strong>Investigator</strong><br/><span class="chip">system</span></td>
+      <td>+ audit</td>
+      <td>open investigations, export data</td>
+      <td>—</td>
+      <td>Tier-2 / 3 case work, regulatory filings</td>
+    </tr>
+    <tr>
+      <td><strong>Admin</strong><br/><span class="chip">system</span></td>
+      <td>full</td>
+      <td>full</td>
+      <td>users, roles</td>
+      <td>Platform operator, RBAC governance</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- DIAGRAM: role × permission matrix -->
+<div class="diagram">
+<svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .h{font:600 9px 'JetBrains Mono';fill:#64748B;letter-spacing:1.5px}
+    .r{font:600 11px 'Inter';fill:#E2E8F0}
+    .y{fill:#00D9FF}.n{fill:#1F2937;stroke:#2D3748}
+    .yk{fill:#22D3A6}.yi{fill:#FFB627}.ya{fill:#FF4ECD}
+  </style>
+  <rect width="900" height="320" fill="#0F1419"/>
+
+  <!-- column headers -->
+  <g class="h" text-anchor="middle">
+    <text x="280" y="40">VIEW_ENT</text>
+    <text x="350" y="40">VIEW_REL</text>
+    <text x="420" y="40">VIEW_EVT</text>
+    <text x="490" y="40">VIEW_AUD</text>
+    <text x="560" y="40">EDIT_ENT</text>
+    <text x="630" y="40">OPEN_INV</text>
+    <text x="700" y="40">EXPORT</text>
+    <text x="770" y="40">USERS</text>
+    <text x="830" y="40">ROLES</text>
+  </g>
+
+  <!-- group bands -->
+  <text x="350" y="20" class="h" text-anchor="middle" fill="#22D3A6">READ</text>
+  <text x="595" y="20" class="h" text-anchor="middle" fill="#FFB627">WRITE</text>
+  <text x="800" y="20" class="h" text-anchor="middle" fill="#FF4ECD">ADMIN</text>
+
+  <!-- analyst row -->
+  <text x="20" y="80" class="r">ANALYST</text>
+  <g transform="translate(0,68)">
+    <rect x="260" y="0" width="40" height="20" class="yk"/>
+    <rect x="330" y="0" width="40" height="20" class="yk"/>
+    <rect x="400" y="0" width="40" height="20" class="yk"/>
+    <rect x="470" y="0" width="40" height="20" class="n"/>
+    <rect x="540" y="0" width="40" height="20" class="n"/>
+    <rect x="610" y="0" width="40" height="20" class="n"/>
+    <rect x="680" y="0" width="40" height="20" class="n"/>
+    <rect x="750" y="0" width="40" height="20" class="n"/>
+    <rect x="810" y="0" width="40" height="20" class="n"/>
+  </g>
+
+  <!-- investigator row -->
+  <text x="20" y="135" class="r">INVESTIGATOR</text>
+  <g transform="translate(0,123)">
+    <rect x="260" y="0" width="40" height="20" class="yk"/>
+    <rect x="330" y="0" width="40" height="20" class="yk"/>
+    <rect x="400" y="0" width="40" height="20" class="yk"/>
+    <rect x="470" y="0" width="40" height="20" class="yk"/>
+    <rect x="540" y="0" width="40" height="20" class="n"/>
+    <rect x="610" y="0" width="40" height="20" class="yi"/>
+    <rect x="680" y="0" width="40" height="20" class="yi"/>
+    <rect x="750" y="0" width="40" height="20" class="n"/>
+    <rect x="810" y="0" width="40" height="20" class="n"/>
+  </g>
+
+  <!-- admin row -->
+  <text x="20" y="190" class="r">ADMIN</text>
+  <g transform="translate(0,178)">
+    <rect x="260" y="0" width="40" height="20" class="yk"/>
+    <rect x="330" y="0" width="40" height="20" class="yk"/>
+    <rect x="400" y="0" width="40" height="20" class="yk"/>
+    <rect x="470" y="0" width="40" height="20" class="yk"/>
+    <rect x="540" y="0" width="40" height="20" class="yi"/>
+    <rect x="610" y="0" width="40" height="20" class="yi"/>
+    <rect x="680" y="0" width="40" height="20" class="yi"/>
+    <rect x="750" y="0" width="40" height="20" class="ya"/>
+    <rect x="810" y="0" width="40" height="20" class="ya"/>
+  </g>
+
+  <!-- custom row -->
+  <text x="20" y="245" class="r" fill="#FF4ECD">CUSTOM (any combo)</text>
+  <g transform="translate(0,233)">
+    <rect x="260" y="0" width="590" height="20" fill="none" stroke="#FF4ECD" stroke-dasharray="3 2"/>
+    <text x="555" y="14" font-family="JetBrains Mono" font-size="10" fill="#FF4ECD" text-anchor="middle">defined per role via Admin → Roles</text>
+  </g>
+
+  <!-- legend -->
+  <g font-family="JetBrains Mono" font-size="9" fill="#94A3B8">
+    <rect x="20" y="285" width="14" height="10" class="yk"/><text x="40" y="294">READ granted</text>
+    <rect x="140" y="285" width="14" height="10" class="yi"/><text x="160" y="294">WRITE granted</text>
+    <rect x="270" y="285" width="14" height="10" class="ya"/><text x="290" y="294">ADMIN granted</text>
+    <rect x="390" y="285" width="14" height="10" class="n"/><text x="410" y="294">not granted</text>
+  </g>
+</svg>
+<div class="caption">DIAGRAM 3.1 · Role × permission matrix</div>
+</div>
+
+<h3>Custom roles</h3>
+<p>
+Admins can compose any subset of the nine permissions into a named role. Common
+patterns:
+</p>
+<ul>
+  <li><strong>Read-only Auditor</strong> — all <code>view_*</code>, nothing else.</li>
+  <li><strong>Compliance Reviewer</strong> — Investigator powers minus <code>export_data</code>.</li>
+  <li><strong>Power Analyst</strong> — Analyst + <code>edit_entities</code>.</li>
+</ul>
+<p>Custom roles are persisted in IndexedDB and survive page reloads. They appear
+alongside built-ins on the login screen.</p>
+</div>
+
+<!-- =================================================================== -->
+<!-- 4. LOGIN                                                            -->
+<!-- =================================================================== -->
+<div class="page page-break" id="login">
+<h2>4 · Sign-in &amp; session</h2>
+<p>
+The login screen has three controls: <strong>operator name</strong>, <strong>role
+selection</strong>, and a deep-link to the custom role builder.
+</p>
+
+<!-- DIAGRAM: login -->
+<div class="diagram">
+<svg viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg">
+  <pattern id="grid2" width="24" height="24" patternUnits="userSpaceOnUse">
+    <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#1F2937" stroke-width="0.5"/>
+  </pattern>
+  <rect width="700" height="380" fill="#0A0E14"/>
+  <rect width="700" height="380" fill="url(#grid2)"/>
+
+  <!-- card -->
+  <rect x="160" y="40" width="380" height="300" fill="#0F1419" stroke="#2D3748"/>
+  <rect x="160" y="40" width="380" height="22" fill="#141B23" stroke="#2D3748"/>
+  <text x="172" y="56" font-family="JetBrains Mono" font-size="9" fill="#E2E8F0" letter-spacing="1.5">ATLANTIS // SIGN-IN</text>
+  <text x="528" y="56" font-family="JetBrains Mono" font-size="9" fill="#64748B" text-anchor="end" letter-spacing="1.5">OFFLINE BUILD</text>
+
+  <!-- name -->
+  <text x="172" y="80" font-family="JetBrains Mono" font-size="9" fill="#64748B" letter-spacing="1.5">OPERATOR NAME</text>
+  <rect x="172" y="86" width="356" height="22" fill="#0A0E14" stroke="#1F2937"/>
+  <text x="180" y="101" font-family="Inter" font-size="11" fill="#E2E8F0">J. Ortega</text>
+
+  <!-- role -->
+  <text x="172" y="128" font-family="JetBrains Mono" font-size="9" fill="#64748B" letter-spacing="1.5">ROLE</text>
+
+  <rect x="172" y="134" width="356" height="42" fill="rgba(0,217,255,0.08)" stroke="#00D9FF"/>
+  <circle cx="184" cy="148" r="4" fill="none" stroke="#00D9FF"/>
+  <circle cx="184" cy="148" r="2" fill="#00D9FF"/>
+  <text x="196" y="151" font-family="Inter" font-size="11" fill="#E2E8F0" font-weight="600">Analyst <tspan fill="#64748B" font-size="9" font-family="JetBrains Mono">  3 perm</tspan></text>
+  <text x="196" y="166" font-family="Inter" font-size="9" fill="#64748B">Read-only entities, events, relationships</text>
+
+  <rect x="172" y="180" width="356" height="42" fill="none" stroke="#1F2937"/>
+  <circle cx="184" cy="194" r="4" fill="none" stroke="#2D3748"/>
+  <text x="196" y="197" font-family="Inter" font-size="11" fill="#E2E8F0" font-weight="600">Investigator <tspan fill="#64748B" font-size="9" font-family="JetBrains Mono">  6 perm</tspan></text>
+  <text x="196" y="212" font-family="Inter" font-size="9" fill="#64748B">Analyst + investigations + export</text>
+
+  <rect x="172" y="226" width="356" height="42" fill="none" stroke="#1F2937"/>
+  <circle cx="184" cy="240" r="4" fill="none" stroke="#2D3748"/>
+  <text x="196" y="243" font-family="Inter" font-size="11" fill="#E2E8F0" font-weight="600">Admin <tspan fill="#64748B" font-size="9" font-family="JetBrains Mono">  9 perm</tspan></text>
+  <text x="196" y="258" font-family="Inter" font-size="9" fill="#64748B">Full + user &amp; role management</text>
+
+  <!-- footer -->
+  <text x="172" y="295" font-family="JetBrains Mono" font-size="9" fill="#64748B">⚙ Define a custom role</text>
+  <rect x="448" y="282" width="80" height="22" fill="rgba(0,217,255,0.08)" stroke="#00D9FF"/>
+  <text x="488" y="297" font-family="JetBrains Mono" font-size="10" fill="#00D9FF" text-anchor="middle" font-weight="600">ENTER →</text>
+</svg>
+<div class="caption">DIAGRAM 4.1 · Login screen with role selection</div>
+</div>
+
+<h3>Sign-in steps</h3>
+<ol>
+  <li>Type your operator name (this is what will appear in the audit log).</li>
+  <li>Select a role. Custom roles you've defined appear in the same list, tagged with a <span class="chip viz">custom</span> chip.</li>
+  <li>Click <kbd>ENTER →</kbd>. You'll land on the Dashboard.</li>
+</ol>
+
+<div class="callout">
+  Session is persisted in <code>localStorage</code> under <code>atlantis.auth</code>.
+  Closing the tab leaves you signed in next time. To force re-auth, click the power
+  icon in the top-right of the top bar.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 5. DASHBOARD                                                        -->
+<!-- =================================================================== -->
+<div class="page page-break" id="dashboard">
+<h2>5 · Dashboard — 14 live tiles</h2>
+<p>
+The Dashboard is the operations center. A wide KPI strip across the top, then a
+12-column × 8-row grid of self-contained tiles. Every tile owns its own data hook,
+loading state, and error boundary, so a slow tile cannot block the rest.
+</p>
+
+<!-- DIAGRAM: dashboard grid -->
+<div class="diagram">
+<svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .t{fill:#141B23;stroke:#1F2937}
+    .lbl{font:600 9px 'JetBrains Mono';fill:#94A3B8;letter-spacing:1.2px}
+    .sub{font:9px 'JetBrains Mono';fill:#64748B}
+    .live{fill:#00D9FF}
+  </style>
+  <rect width="900" height="500" fill="#0A0E14"/>
+
+  <!-- KPI strip -->
+  <rect x="10" y="10" width="880" height="50" class="t"/>
+  <g class="lbl">
+    <text x="20" y="28">RECORDS</text><text x="20" y="48" font-family="JetBrains Mono" font-size="16" fill="#E2E8F0">750.2K</text>
+    <line x1="186" y1="10" x2="186" y2="60" stroke="#1F2937"/>
+    <text x="196" y="28">INGEST</text><text x="196" y="48" font-family="JetBrains Mono" font-size="16" fill="#E2E8F0">4</text>
+    <line x1="362" y1="10" x2="362" y2="60" stroke="#1F2937"/>
+    <text x="372" y="28">Q-LATENCY</text><text x="372" y="48" font-family="JetBrains Mono" font-size="16" fill="#FFB627">41 ms</text>
+    <line x1="538" y1="10" x2="538" y2="60" stroke="#1F2937"/>
+    <text x="548" y="28">LOAD</text><text x="548" y="48" font-family="JetBrains Mono" font-size="16" fill="#FFB627">32%</text>
+    <line x1="714" y1="10" x2="714" y2="60" stroke="#1F2937"/>
+    <text x="724" y="28">ALERTS</text><text x="724" y="48" font-family="JetBrains Mono" font-size="16" fill="#FF4747">12</text>
+  </g>
+
+  <!-- Grid 12 col x 8 row, total area 880x420 starting at 10,70 -->
+  <!-- col width ~72, row height ~52 -->
+
+  <!-- TimeSeries 5x3 -->
+  <rect x="10" y="70" width="370" height="160" class="t"/>
+  <text x="20" y="88" class="lbl">TRANSACTIONS · LAST 24H</text>
+  <circle cx="200" cy="84" r="3" class="live"/>
+  <path d="M30 200 L60 180 L90 190 L120 150 L150 160 L180 120 L210 140 L240 110 L270 130 L300 100 L330 120 L360 90" fill="none" stroke="#00D9FF" stroke-width="1.5"/>
+
+  <!-- Geo 4x5 -->
+  <rect x="386" y="70" width="290" height="270" class="t"/>
+  <text x="396" y="88" class="lbl">GEOSPATIAL · HIGH-RISK</text>
+  <g opacity="0.6">
+    <circle cx="450" cy="180" r="4" fill="#FF4747"/>
+    <circle cx="500" cy="160" r="3" fill="#FFB627"/>
+    <circle cx="550" cy="200" r="5" fill="#FF4747"/>
+    <circle cx="600" cy="240" r="2" fill="#FFB627"/>
+    <circle cx="480" cy="280" r="3" fill="#FFB627"/>
+    <circle cx="620" cy="180" r="4" fill="#FF4747"/>
+    <circle cx="640" cy="290" r="3" fill="#FFB627"/>
+  </g>
+
+  <!-- LiveFeed 3x5 -->
+  <rect x="682" y="70" width="208" height="270" class="t"/>
+  <text x="692" y="88" class="lbl">LIVE EVENT FEED</text>
+  <circle cx="780" cy="84" r="3" class="live"/>
+  <g class="sub">
+    <text x="692" y="108">14:32:08 TX  Card txn  US</text>
+    <text x="692" y="124">14:32:06 WR  Wire     CH</text>
+    <text x="692" y="140">14:32:04 AL  Alert    RU</text>
+    <text x="692" y="156">14:32:01 LG  Login    DE</text>
+    <text x="692" y="172">14:31:58 KY  KYC      US</text>
+    <text x="692" y="188">14:31:55 TX  Card txn  GB</text>
+    <text x="692" y="204">14:31:51 AC  Access   US</text>
+    <text x="692" y="220">14:31:47 WR  Wire     KY</text>
+    <text x="692" y="236">14:31:43 AL  Alert    PA</text>
+    <text x="692" y="252">14:31:39 TX  Card txn  US</text>
+  </g>
+
+  <!-- Counters 3x2 -->
+  <rect x="10" y="236" width="220" height="104" class="t"/>
+  <text x="20" y="252" class="lbl">ENTITY POPULATION</text>
+  <g class="sub">
+    <text x="20" y="276">PERSONS  8.3K</text>
+    <text x="120" y="276">ORGS  8.3K</text>
+    <text x="20" y="304">ACCTS  8.4K</text>
+    <text x="120" y="304">TX    8.3K</text>
+    <text x="20" y="332">DEV   8.3K</text>
+    <text x="120" y="332">LOC   8.3K</text>
+  </g>
+
+  <!-- AlertSummary 2x2 -->
+  <rect x="236" y="236" width="144" height="104" class="t"/>
+  <text x="246" y="252" class="lbl">ALERT SUMMARY</text>
+  <g font-family="JetBrains Mono" text-anchor="middle">
+    <text x="270" y="295" fill="#FF4747" font-size="14" font-weight="600">12</text><text x="270" y="320" class="lbl">CRIT</text>
+    <text x="305" y="295" fill="#FFB627" font-size="14" font-weight="600">38</text><text x="305" y="320" class="lbl">WARN</text>
+    <text x="350" y="295" fill="#00D9FF" font-size="14" font-weight="600">120</text><text x="350" y="320" class="lbl">INFO</text>
+  </g>
+
+  <!-- Distribution 5x2 -->
+  <rect x="10" y="346" width="370" height="100" class="t"/>
+  <text x="20" y="362" class="lbl">RISK DISTRIBUTION</text>
+  <g>
+    <rect x="20" y="430" width="28" height="-12" fill="#00D9FF" transform="translate(0,0)"/>
+    <rect x="20" y="400" width="28" height="30" fill="#00D9FF" opacity="0.7"/>
+    <rect x="56" y="390" width="28" height="40" fill="#00D9FF" opacity="0.7"/>
+    <rect x="92" y="380" width="28" height="50" fill="#00D9FF" opacity="0.7"/>
+    <rect x="128" y="370" width="28" height="60" fill="#00D9FF" opacity="0.7"/>
+    <rect x="164" y="375" width="28" height="55" fill="#00D9FF" opacity="0.7"/>
+    <rect x="200" y="385" width="28" height="45" fill="#00D9FF" opacity="0.7"/>
+    <rect x="236" y="395" width="28" height="35" fill="#FFB627" opacity="0.8"/>
+    <rect x="272" y="405" width="28" height="25" fill="#FFB627" opacity="0.8"/>
+    <rect x="308" y="410" width="28" height="20" fill="#FF4747" opacity="0.8"/>
+    <rect x="344" y="415" width="28" height="15" fill="#FF4747" opacity="0.8"/>
+  </g>
+
+  <!-- Anomalies 3x3 -->
+  <rect x="386" y="346" width="220" height="142" class="t"/>
+  <text x="396" y="362" class="lbl">ANOMALIES</text>
+  <circle cx="500" cy="358" r="3" class="live"/>
+  <g class="sub">
+    <text x="396" y="382" fill="#FF4747">CRIT  Sanctions match</text>
+    <text x="396" y="402" fill="#FFB627">HIGH  Velocity breach</text>
+    <text x="396" y="422" fill="#FFB627">HIGH  Geo anomaly</text>
+    <text x="396" y="442" fill="#94A3B8">MED   Round-amount layering</text>
+    <text x="396" y="462" fill="#94A3B8">MED   Behavioral drift</text>
+  </g>
+
+  <!-- QueryPerf 4x2 -->
+  <rect x="612" y="346" width="278" height="100" class="t"/>
+  <text x="622" y="362" class="lbl">QUERY PERFORMANCE</text>
+  <circle cx="740" cy="358" r="3" class="live"/>
+  <g class="sub">
+    <text x="622" y="385">LAST 41ms</text>
+    <text x="715" y="385">AVG 38ms</text>
+    <text x="810" y="385">MAX 92ms</text>
+  </g>
+  <path d="M625 430 L650 420 L675 425 L700 410 L725 415 L750 405 L775 410 L800 400 L825 415 L850 405 L875 400" fill="none" stroke="#00D9FF" stroke-width="1.2"/>
+
+  <!-- Bottom row tiles (sources, audit) - schematic -->
+  <rect x="612" y="452" width="278" height="38" class="t"/>
+  <text x="622" y="470" class="lbl">DATA SOURCES · 6</text>
+  <g><circle cx="730" cy="478" r="3" fill="#22D3A6"/><circle cx="745" cy="478" r="3" fill="#22D3A6"/><circle cx="760" cy="478" r="3" fill="#FFB627"/><circle cx="775" cy="478" r="3" fill="#22D3A6"/><circle cx="790" cy="478" r="3" fill="#22D3A6"/><circle cx="805" cy="478" r="3" fill="#FF4747"/></g>
+
+  <rect x="10" y="452" width="596" height="38" class="t"/>
+  <text x="20" y="470" class="lbl">RECENT AUDIT · 60</text>
+  <text x="160" y="470" class="sub">14:32:08 view_entity  EZ4Y2T9P  J. ORTEGA</text>
+</svg>
+<div class="caption">DIAGRAM 5.1 · Dashboard layout (schematic) — 14 tiles + KPI strip</div>
+</div>
+
+<h3>Tile reference</h3>
+<table>
+  <thead><tr><th>#</th><th>Tile</th><th>What it shows</th><th>Live</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>System Status Strip</td><td>Records, ingest, latency, load, alerts — each with sparkline + delta</td><td><span class="chip on">●</span></td></tr>
+    <tr><td>2</td><td>Live Event Feed</td><td>Newest events at the top, animated entry</td><td><span class="chip on">●</span></td></tr>
+    <tr><td>3</td><td>Entity Population</td><td>Counts per entity type, Δ vs last hour</td><td></td></tr>
+    <tr><td>4</td><td>Transactions Last 24H</td><td>Dual-series time-series, alerts overlay</td><td><span class="chip on">●</span></td></tr>
+    <tr><td>5</td><td>Geospatial · High Risk</td><td>Leaflet map of risk-score &gt; 70 entities</td><td></td></tr>
+    <tr><td>6</td><td>Top-Risk Entities</td><td>Virtualized table sorted by composite risk</td><td></td></tr>
+    <tr><td>7</td><td>Relationship Preview</td><td>Force-directed graph of recent connections</td><td></td></tr>
+    <tr><td>8</td><td>Anomalies</td><td>Live anomaly list with severity + risk bar</td><td><span class="chip on">●</span></td></tr>
+    <tr><td>9</td><td>Active Investigations</td><td>Open cases with progress indicators</td><td></td></tr>
+    <tr><td>10</td><td>Risk Distribution</td><td>Histogram across 0–99 buckets</td><td></td></tr>
+    <tr><td>11</td><td>Recent Audit</td><td>Most recent 60 audit entries</td><td></td></tr>
+    <tr><td>12</td><td>Alert Summary</td><td>Critical / Warning / Info counters</td><td><span class="chip on">●</span></td></tr>
+    <tr><td>13</td><td>Data Sources</td><td>Source health + record count + last sync</td><td></td></tr>
+    <tr><td>14</td><td>Query Performance</td><td>Last / avg / max query latency + spark</td><td><span class="chip on">●</span></td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <strong>Live indicator.</strong> A pulsing cyan dot in a tile header means the tile
+  is subscribed to the live tick worker. Updates arrive every 2–5 seconds.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 6. ENTITY EXPLORER                                                  -->
+<!-- =================================================================== -->
+<div class="page page-break" id="entities">
+<h2>6 · Entity Explorer</h2>
+<p>The Entity Explorer is a faceted, virtualized browser over the 50,000+ seeded
+entities. It is the primary tool for ad-hoc investigation and the entry point to
+the inspector.</p>
+
+<!-- DIAGRAM: explorer -->
+<div class="diagram">
+<svg viewBox="0 0 900 440" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="440" fill="#0A0E14"/>
+
+  <!-- left facets -->
+  <rect x="0" y="0" width="180" height="440" fill="#141B23" stroke="#1F2937"/>
+  <text x="10" y="20" font-family="JetBrains Mono" font-size="9" fill="#64748B" letter-spacing="1.5">FACETS</text>
+
+  <text x="10" y="42" font-family="JetBrains Mono" font-size="9" fill="#64748B">TYPE</text>
+  <g font-family="JetBrains Mono" font-size="9">
+    <rect x="10" y="48" width="40" height="14" fill="#00D9FF" opacity="0.1" stroke="#00D9FF"/><text x="14" y="58" fill="#00D9FF">person</text>
+    <rect x="52" y="48" width="32" height="14" fill="none" stroke="#1F2937"/><text x="56" y="58" fill="#94A3B8">org</text>
+    <rect x="86" y="48" width="50" height="14" fill="none" stroke="#1F2937"/><text x="90" y="58" fill="#94A3B8">account</text>
+    <rect x="138" y="48" width="32" height="14" fill="none" stroke="#1F2937"/><text x="142" y="58" fill="#94A3B8">tx</text>
+  </g>
+
+  <text x="10" y="84" font-family="JetBrains Mono" font-size="9" fill="#64748B">JURISDICTION</text>
+  <g font-family="JetBrains Mono" font-size="9">
+    <rect x="10" y="90" width="22" height="14" fill="none" stroke="#1F2937"/><text x="14" y="100" fill="#94A3B8">US</text>
+    <rect x="34" y="90" width="22" height="14" fill="#00D9FF" opacity="0.1" stroke="#00D9FF"/><text x="38" y="100" fill="#00D9FF">GB</text>
+    <rect x="58" y="90" width="22" height="14" fill="#00D9FF" opacity="0.1" stroke="#00D9FF"/><text x="62" y="100" fill="#00D9FF">RU</text>
+    <rect x="82" y="90" width="22" height="14" fill="none" stroke="#1F2937"/><text x="86" y="100" fill="#94A3B8">CY</text>
+    <rect x="106" y="90" width="22" height="14" fill="none" stroke="#1F2937"/><text x="110" y="100" fill="#94A3B8">PA</text>
+    <rect x="130" y="90" width="22" height="14" fill="none" stroke="#1F2937"/><text x="134" y="100" fill="#94A3B8">KY</text>
+  </g>
+
+  <text x="10" y="126" font-family="JetBrains Mono" font-size="9" fill="#64748B">TAGS</text>
+  <g font-family="JetBrains Mono" font-size="9">
+    <rect x="10" y="132" width="60" height="14" fill="none" stroke="#1F2937"/><text x="14" y="142" fill="#94A3B8">sanctioned</text>
+    <rect x="72" y="132" width="38" height="14" fill="#00D9FF" opacity="0.1" stroke="#00D9FF"/><text x="76" y="142" fill="#00D9FF">pep</text>
+    <rect x="10" y="148" width="70" height="14" fill="none" stroke="#1F2937"/><text x="14" y="158" fill="#94A3B8">shell-co</text>
+    <rect x="82" y="148" width="60" height="14" fill="none" stroke="#1F2937"/><text x="86" y="158" fill="#94A3B8">mule-sus</text>
+  </g>
+
+  <text x="10" y="184" font-family="JetBrains Mono" font-size="9" fill="#64748B">RISK RANGE</text>
+  <rect x="10" y="190" width="30" height="14" fill="#0A0E14" stroke="#1F2937"/><text x="14" y="200" font-family="JetBrains Mono" font-size="9" fill="#E2E8F0">60</text>
+  <text x="42" y="200" font-family="JetBrains Mono" font-size="9" fill="#64748B">—</text>
+  <rect x="50" y="190" width="30" height="14" fill="#0A0E14" stroke="#1F2937"/><text x="54" y="200" font-family="JetBrains Mono" font-size="9" fill="#E2E8F0">99</text>
+
+  <!-- query bar -->
+  <rect x="180" y="0" width="540" height="32" fill="#0F1419" stroke="#1F2937"/>
+  <rect x="190" y="6" width="380" height="20" fill="#0A0E14" stroke="#1F2937"/>
+  <text x="198" y="20" font-family="Inter" font-size="11" fill="#64748B">Search entities by name or ID…</text>
+  <rect x="578" y="6" width="60" height="20" fill="rgba(0,217,255,0.1)" stroke="#00D9FF"/>
+  <text x="608" y="20" font-family="JetBrains Mono" font-size="10" fill="#00D9FF" text-anchor="middle" font-weight="600">QUERY</text>
+  <text x="650" y="20" font-family="JetBrains Mono" font-size="9" fill="#64748B">487 rows</text>
+
+  <!-- table -->
+  <rect x="180" y="32" width="540" height="408" fill="#141B23"/>
+  <rect x="180" y="32" width="540" height="22" fill="#0F1419"/>
+  <g font-family="JetBrains Mono" font-size="9" fill="#64748B" letter-spacing="1.2">
+    <text x="190" y="46">ID</text>
+    <text x="280" y="46">TYPE</text>
+    <text x="340" y="46">NAME</text>
+    <text x="500" y="46">CC</text>
+    <text x="540" y="46">RISK</text>
+    <text x="630" y="46">TAGS</text>
+  </g>
+  <!-- rows -->
+  <g font-family="JetBrains Mono" font-size="10">
+    <rect x="180" y="54" width="540" height="22" fill="rgba(0,217,255,0.08)"/>
+    <text x="190" y="68" fill="#E2E8F0">E000ABCDXY</text>
+    <text x="280" y="68" fill="#00D9FF">PERSON</text>
+    <text x="340" y="68" fill="#E2E8F0" font-family="Inter">M. Ivanov</text>
+    <text x="500" y="68" fill="#E2E8F0">RU</text>
+    <rect x="538" y="60" width="60" height="6" fill="#0A0E14" stroke="#1F2937"/>
+    <rect x="538" y="60" width="56" height="6" fill="#FF4747"/>
+    <text x="603" y="68" fill="#94A3B8">93</text>
+    <text x="630" y="68" fill="#94A3B8" font-family="Inter" font-size="9">sanctioned pep</text>
+
+    <rect x="180" y="76" width="540" height="22" fill="rgba(15,20,25,0.4)"/>
+    <text x="190" y="90" fill="#E2E8F0">E0019FGH22</text>
+    <text x="280" y="90" fill="#00D9FF">ORG</text>
+    <text x="340" y="90" fill="#E2E8F0" font-family="Inter">Halcyon Holdings Ltd</text>
+    <text x="500" y="90" fill="#E2E8F0">KY</text>
+    <rect x="538" y="82" width="60" height="6" fill="#0A0E14" stroke="#1F2937"/>
+    <rect x="538" y="82" width="50" height="6" fill="#FFB627"/>
+    <text x="603" y="90" fill="#94A3B8">82</text>
+    <text x="630" y="90" fill="#94A3B8" font-family="Inter" font-size="9">shell-co</text>
+
+    <rect x="180" y="98" width="540" height="22" fill="none"/>
+    <text x="190" y="112" fill="#E2E8F0">E0021IJK87</text>
+    <text x="280" y="112" fill="#00D9FF">ACCOUNT</text>
+    <text x="340" y="112" fill="#E2E8F0" font-family="Inter">ACCT-9XR2L</text>
+    <text x="500" y="112" fill="#E2E8F0">CH</text>
+    <rect x="538" y="104" width="60" height="6" fill="#0A0E14" stroke="#1F2937"/>
+    <rect x="538" y="104" width="48" height="6" fill="#FFB627"/>
+    <text x="603" y="112" fill="#94A3B8">78</text>
+
+    <rect x="180" y="120" width="540" height="22" fill="rgba(15,20,25,0.4)"/>
+    <text x="190" y="134" fill="#94A3B8">E003LMNQRS</text>
+    <text x="280" y="134" fill="#94A3B8">PERSON</text>
+    <text x="340" y="134" fill="#94A3B8" font-family="Inter">A. Petrov</text>
+    <text x="500" y="134" fill="#94A3B8">CY</text>
+    <rect x="538" y="126" width="60" height="6" fill="#0A0E14" stroke="#1F2937"/>
+    <rect x="538" y="126" width="44" height="6" fill="#FFB627"/>
+    <text x="603" y="134" fill="#94A3B8">72</text>
+
+    <text x="450" y="200" font-family="Inter" font-size="11" fill="#475569" text-anchor="middle">… 50,000 rows virtualized …</text>
+  </g>
+
+  <!-- inspector -->
+  <rect x="720" y="0" width="180" height="440" fill="#141B23" stroke="#1F2937"/>
+  <text x="730" y="20" font-family="JetBrains Mono" font-size="9" fill="#64748B" letter-spacing="1.5">INSPECTOR</text>
+  <text x="730" y="38" font-family="Inter" font-size="11" fill="#E2E8F0" font-weight="600">M. Ivanov</text>
+  <text x="730" y="50" font-family="JetBrains Mono" font-size="9" fill="#64748B">E000ABCDXY</text>
+
+  <g font-family="JetBrains Mono" font-size="9" fill="#94A3B8">
+    <text x="730" y="76">TYPE     person</text>
+    <text x="730" y="92">COUNTRY  RU</text>
+    <text x="730" y="108">RISK</text>
+    <rect x="772" y="100" width="80" height="6" fill="#0A0E14" stroke="#1F2937"/>
+    <rect x="772" y="100" width="74" height="6" fill="#FF4747"/>
+    <text x="730" y="128">CREATED  2025-08-12</text>
+    <text x="730" y="144">UPDATED  2026-05-15</text>
+    <text x="730" y="160">DOB      1971-03-04</text>
+
+    <text x="730" y="190" fill="#64748B" letter-spacing="1.5">RECENT EVENTS</text>
+    <text x="730" y="210" fill="#FF4747">ALERT  Sanctions match</text>
+    <text x="730" y="224" fill="#94A3B8">WIRE   $48,200 → KY</text>
+    <text x="730" y="238" fill="#94A3B8">LOGIN  device DEV-3F2K</text>
+    <text x="730" y="252" fill="#94A3B8">TX     $9,950 ATM</text>
+  </g>
+</svg>
+<div class="caption">DIAGRAM 6.1 · Entity Explorer (facets, table, inspector)</div>
+</div>
+
+<h3>The chip query input</h3>
+<p>
+The top bar hosts a <code>ChipQueryInput</code>: parsed clauses render as cyan chips,
+unrecognized tokens render as red error chips, and the raw text is editable
+inline. Whitespace-separated clauses are AND-combined; comma-lists within a
+single clause are OR. See <a href="#query">§13 · Query language</a> for the full
+grammar.
+</p>
+
+<h3>Quick facets &amp; saved queries</h3>
+<ul>
+  <li><strong>QUICK FACETS</strong> (left rail) — one-click presets: <em>High risk</em>, <em>Sanctioned</em>, <em>High-risk jurisdiction</em>, <em>Shell companies</em>, <em>PEP persons</em>. Clicking a preset appends its expression to the current query.</li>
+  <li><strong>SAVED QUERIES</strong> — the <kbd>★ SAVE</kbd> button prompts for a name and persists the current query string to the <code>savedQueries</code> store with a <code>save_query</code> audit entry. The list below the facets reloads them on click; hover for the <kbd>×</kbd> delete.</li>
+  <li>Submitting the query writes a <code>run_query</code> audit entry with the resulting row count.</li>
+</ul>
+
+<h3>Deep links</h3>
+<p>
+The Explorer reads two URL parameters:
+</p>
+<ul>
+  <li><code>?focus=ID</code> — auto-seeds the query as <code>id:ID</code> and opens the inspector on that row.</li>
+  <li><code>?seedQuery=…</code> — pre-populates the chip input. Used by the command palette and quick-jump buttons from the Graph / Geo views.</li>
+</ul>
+
+<h3>CSV export</h3>
+<p>
+Operators with the <code>export_data</code> permission see a <kbd>CSV</kbd> button next
+to <kbd>★ SAVE</kbd>. It serialises the currently-displayed rows (id, type, name,
+country, risk, pipe-joined tags) to
+<code>atlantis-entities-{timestamp}.csv</code> and emits an
+<code>export_entities</code> audit entry.
+</p>
+
+<h3>The inspector</h3>
+<p>Clicking any row opens the right-side inspector with:</p>
+<ul>
+  <li>Core attributes (type, country, risk bar, created/updated timestamps).</li>
+  <li>Type-specific fields (DOB for persons, balance for accounts, etc.).</li>
+  <li>Up to 10 most recent related events.</li>
+</ul>
+<p>Every inspector open emits an audit entry: <code>view_entity</code>.</p>
+</div>
+
+<!-- =================================================================== -->
+<!-- 7. GRAPH VIEW                                                       -->
+<!-- =================================================================== -->
+<div class="page page-break" id="graph">
+<h2>7 · Graph View</h2>
+<p>
+The Graph View is a full-screen, force-directed canvas for exploring the
+relationship network. It is reached from the left nav (<em>GRAPH</em>) or via the
+command palette. Access requires the <code>view_relationships</code> permission.
+</p>
+
+<h3>Layout</h3>
+<table>
+  <thead><tr><th>Region</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>Top bar</td><td>Live node / edge counts and the <strong>layout picker</strong> — <kbd>FORCE</kbd>, <kbd>RADIAL</kbd>, <kbd>GRID</kbd>.</td></tr>
+    <tr><td>Left rail</td><td>Edge-kind toggles, the risk slider, and the edge-limit slider. A colour legend mirrors the edges on the canvas.</td></tr>
+    <tr><td>Canvas</td><td>Nodes coloured by risk (cyan / amber / red) and sized by risk + degree. Transaction edges animate with directional particles.</td></tr>
+    <tr><td>Right inspector</td><td>Selected node's attributes, risk, degree, and up to 30 neighbours. Click any neighbour to re-centre on it.</td></tr>
+    <tr><td>Bottom scrubber</td><td>Filters edges by <code>firstSeen ≤ T</code> across a rolling 180-day window. Drag right to reveal newer relationships.</td></tr>
+  </tbody>
+</table>
+
+<h3>Edge kinds</h3>
+<p>Six relationship types can be toggled independently:</p>
+<ul>
+  <li><code>transacts_with</code>, <code>owns</code>, <code>controls</code></li>
+  <li><code>communicates_with</code>, <code>co_located</code>, <code>shares_device</code></li>
+</ul>
+
+<div class="callout">
+  <strong>Performance.</strong> The graph engine (<code>react-force-graph-2d</code>) is dynamically
+  imported, so the canvas only loads when the route opens. Keep the edge limit
+  under 400 on lower-end machines; the slider tops out at 800.
+</div>
+
+<div class="callout warn">
+  <strong>Audit.</strong> Every node selected on the canvas emits a
+  <code>view_node</code> entry with <code>context: graph</code> — visible in both the
+  Recent Audit tile and the dedicated Audit Log screen.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 8. INVESTIGATION WORKSPACE                                          -->
+<!-- =================================================================== -->
+<div class="page page-break" id="investigations">
+<h2>8 · Investigation Workspace</h2>
+<p>
+Cases bundle entities, notes, and evidence into one persistent investigation
+record. The workspace has two views: a <strong>list</strong> at
+<code>/investigations</code> and a <strong>detail</strong> view at
+<code>/investigations/:id</code>. Both require the <code>open_investigations</code>
+permission.
+</p>
+
+<h3>List view</h3>
+<ul>
+  <li>Status filter chips: <span class="chip">all</span> <span class="chip">open</span> <span class="chip">reviewing</span> <span class="chip">closed</span>.</li>
+  <li>Columns: status, title (linked), entity count, progress bar, last-updated, created-at.</li>
+  <li>Click <kbd>+ NEW CASE</kbd> (top right) to prompt for a title and open a fresh case. The action emits an <code>open_case</code> audit entry.</li>
+</ul>
+
+<h3>Three-column detail</h3>
+<table>
+  <thead><tr><th>Column</th><th>Contents</th></tr></thead>
+  <tbody>
+    <tr><td>Left — Entities</td><td>List of entities pinned to the case. Add by entering an entity ID (e.g. <code>E000123</code>) and pressing <kbd>+</kbd>. Hover a row to reveal the <kbd>×</kbd> remove control.</td></tr>
+    <tr><td>Centre — Notes</td><td>Reverse-chronological note timeline with author + relative timestamp. Draft a note in the bottom composer; <kbd>⌘↵</kbd> / <kbd>Ctrl ↵</kbd> posts it.</td></tr>
+    <tr><td>Right — Evidence</td><td>Pinned event references. Use <kbd>+ PIN LAST EVENT</kbd> to attach the most recent live event from the tick worker as evidence.</td></tr>
+  </tbody>
+</table>
+
+<h3>Top bar controls</h3>
+<ul>
+  <li><strong>Status chips</strong> — switch between <code>open</code>, <code>reviewing</code>, <code>closed</code>.</li>
+  <li><strong>Progress slider</strong> — 0–100%; mirrored on the list view's progress column.</li>
+</ul>
+
+<div class="callout warn">
+  <strong>Audit.</strong> Every status change, progress edit, note, entity add /
+  remove, and evidence pin writes an <code>edit_case</code> entry with a structured
+  diff in <code>details</code>.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 9. AUDIT LOG SCREEN                                                 -->
+<!-- =================================================================== -->
+<div class="page page-break" id="auditlog">
+<h2>9 · Audit Log screen</h2>
+<p>
+The dedicated Audit Log screen (<code>/audit</code>) is the forensic counterpart to
+the dashboard's Recent Audit tile. It loads up to 5,000 most-recent rows from
+the local audit store and lets you filter, search, and export them.
+Access requires <code>view_audit</code>; export requires <code>export_data</code>.
+</p>
+
+<h3>Controls</h3>
+<table>
+  <thead><tr><th>Control</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td>Range chips</td><td><kbd>15M</kbd>, <kbd>1H</kbd>, <kbd>24H</kbd>, <kbd>7D</kbd>, <kbd>ALL</kbd> — windows the table to entries newer than the chosen offset.</td></tr>
+    <tr><td>Operator search</td><td>Free-text filter against <code>userId</code>; case-insensitive substring match.</td></tr>
+    <tr><td>Action facet (left rail)</td><td>Multi-select chips for <code>login</code>, <code>view_entity</code>, <code>create_role</code>, <code>edit_role</code>, <code>delete_role</code>, <code>export_audit</code>, <code>run_query</code>, <code>open_case</code>, <code>edit_case</code>, <code>close_case</code>.</td></tr>
+    <tr><td><kbd>EXPORT CSV</kbd></td><td>Downloads the currently-filtered rows as <code>atlantis-audit-YYYY-MM-DD.csv</code>. The export itself emits an <code>export_audit</code> entry with the row count.</td></tr>
+  </tbody>
+</table>
+
+<h3>Columns</h3>
+<ul>
+  <li><strong>Timestamp</strong> — local-clock, monospace.</li>
+  <li><strong>Operator</strong> — userId or <code>system</code>.</li>
+  <li><strong>Action</strong> — colour-tagged action name.</li>
+  <li><strong>Target</strong> — affected object ID, when applicable.</li>
+  <li><strong>Details</strong> — inline JSON payload.</li>
+</ul>
+
+<div class="callout">
+  Operators without <code>export_data</code> still see the <kbd>EXPORT CSV</kbd>
+  button, but it renders disabled with a tooltip explaining the missing
+  permission — clearer than hiding the affordance entirely.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 10. GEOSPATIAL                                                      -->
+<!-- =================================================================== -->
+<div class="page page-break" id="geo">
+<h2>10 · Geospatial View</h2>
+<p>
+Reached from the left nav (<em>MAP</em>) or via <code>/map</code>, the Geospatial View
+plots high-risk entities on a Leaflet world map and supports clustering, basemap
+switching, and a sketch of offline tile caching. Access requires
+<code>view_entities</code>.
+</p>
+
+<h3>Layout</h3>
+<table>
+  <thead><tr><th>Region</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>Top bar</td><td>Live counts (points · clusters · zoom), the basemap chips (<kbd>DARK</kbd>, <kbd>DARK+LBL</kbd>, <kbd>LIGHT</kbd>), the <kbd>CLUSTERS</kbd> toggle, and a <kbd>↻</kbd> refresh.</td></tr>
+    <tr><td>Left rail</td><td>Risk-threshold slider (default 60), event-window slider (1–30 days), the offline-tile pane, and a recent-events feed.</td></tr>
+    <tr><td>Centre</td><td>Map canvas. Markers are coloured by risk (cyan / amber / red); cluster radius scales with member count.</td></tr>
+    <tr><td>Right inspector</td><td>Selected entity attributes (lat/lng, country, risk) plus quick-jump buttons to the Entity Explorer and Graph View.</td></tr>
+  </tbody>
+</table>
+
+<h3>Clustering</h3>
+<p>
+The view bins points into a lat/lng grid whose cell size scales with the current
+zoom — denser at low zoom, finer at high zoom. Toggle <kbd>CLUSTERS</kbd> off to
+fall back to per-entity markers; a cluster click opens its first member in the
+inspector and emits a <code>view_cluster</code> audit entry with the cluster size.
+</p>
+
+<h3>Offline tiles</h3>
+<div class="callout">
+  <strong>Sketch in Phase 3.</strong> The <code>tileCache</code> Dexie store and the
+  <kbd>CACHE WORLD z=2</kbd> / <kbd>CLEAR CACHE</kbd> controls are wired; the cache count
+  updates live and a <code>cache_tiles</code> audit entry is written on save.
+  Production-grade MBTiles ingestion lands in Phase 4.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 11. ANOMALY TUNING                                                  -->
+<!-- =================================================================== -->
+<div class="page page-break" id="anomalies">
+<h2>11 · Anomaly Tuning</h2>
+<p>
+The Anomaly Tuning workspace (<code>/anomalies</code>) lets analysts shape the
+weighted-signal model that flags suspicious entities, preview its effect on a
+500-entity sample, and persist or apply the resulting detections. Access
+requires <code>view_events</code>.
+</p>
+
+<h3>Layout</h3>
+<table>
+  <thead><tr><th>Region</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>Top bar</td><td>Live model name, live <code>flagged / scanned (%)</code> readout, and the action buttons <kbd>RESET</kbd>, <kbd>★ SAVE</kbd>, <kbd>APPLY → ANOMALIES</kbd>.</td></tr>
+    <tr><td>Left rail</td><td>One slider per <strong>signal</strong> (weight 0–1) plus a <strong>threshold</strong> slider (flag composite ≥ N). Below: the list of saved model configs — click to load, hover for <kbd>×</kbd> delete.</td></tr>
+    <tr><td>Centre</td><td>Preview of the top 30 scored entities. Each row shows the entity, composite risk bar, FLAGGED/BELOW chip, and per-signal contribution chips.</td></tr>
+    <tr><td>Right rail</td><td>Reverse-chronological list of the most-recent anomaly rows written into the persistent store.</td></tr>
+  </tbody>
+</table>
+
+<h3>Signals</h3>
+<p>
+Signals are defined in <code>src/lib/anomalyModel.js</code>. Each contributes to the
+final composite score weighted by its slider. Setting a weight to zero excludes
+that signal entirely from scoring.
+</p>
+
+<h3>Saving and applying</h3>
+<ul>
+  <li><kbd>★ SAVE</kbd> prompts for a name and persists the config to <code>modelConfigs</code> with a <code>save_model</code> audit entry.</li>
+  <li><kbd>APPLY → ANOMALIES</kbd> writes up to 40 flagged entities into the <code>anomalies</code> store, classifying severity by composite score (≥85 critical, ≥70 high, ≥60 medium). Emits <code>apply_model</code> with the row count.</li>
+  <li><kbd>RESET</kbd> restores <code>defaultConfig()</code> without touching saved models.</li>
+</ul>
+
+<div class="callout warn">
+  <strong>Toasts.</strong> Save / apply / load / delete operations confirm via the
+  toast layer in the bottom-right. Errors and "no rows crossed threshold" cases
+  surface there too.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 12. REPORT BUILDER                                                  -->
+<!-- =================================================================== -->
+<div class="page page-break" id="reports">
+<h2>12 · Report Builder</h2>
+<p>
+The Report Builder (<code>/reports</code>) assembles sectioned investigation reports
+from live data — KPIs, query results, anomalies, cases, and free-form notes —
+and prints them via the browser's <em>Save as PDF</em> dialog. Access requires
+<code>export_data</code>.
+</p>
+
+<h3>Layout</h3>
+<table>
+  <thead><tr><th>Region</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>Top bar</td><td>Report name input, section counter, and the action buttons <kbd>+ NEW</kbd>, <kbd>★ SAVE</kbd>, <kbd>↧ EXPORT PDF</kbd>.</td></tr>
+    <tr><td>Left rail</td><td>Outline of the current report (reorder ↑↓, remove ×), the <em>ADD SECTION</em> palette, and saved reports below.</td></tr>
+    <tr><td>Centre</td><td>Live preview canvas — each section renders against current Dexie data; click a section to select it for editing.</td></tr>
+    <tr><td>Right rail</td><td>Editor for the currently-selected section's configuration (title, query, limit, status, body, …).</td></tr>
+  </tbody>
+</table>
+
+<h3>Section types</h3>
+<table>
+  <thead><tr><th>Type</th><th>Renders</th></tr></thead>
+  <tbody>
+    <tr><td><code>cover</code></td><td>Title + subtitle + generation timestamp.</td></tr>
+    <tr><td><code>metrics</code></td><td>KPI tiles — entity, anomaly, and case counts.</td></tr>
+    <tr><td><code>query</code></td><td>Top-N entities matching a query-language expression; includes a per-section CSV export.</td></tr>
+    <tr><td><code>anomalies</code></td><td>Most-recent N anomalies with severity, reason, and entity ID.</td></tr>
+    <tr><td><code>cases</code></td><td>Investigation summaries, optionally filtered by status.</td></tr>
+    <tr><td><code>notes</code></td><td>Free-form narrative block.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>PDF export.</strong> <kbd>↧ EXPORT PDF</kbd> calls <code>window.print()</code>;
+  print-only CSS hides the rails / chrome and re-styles sections with light
+  backgrounds. Use the browser's <em>Save as PDF</em> destination to produce a
+  static artefact. Both save and print emit audit entries
+  (<code>save_report</code>, <code>print_report</code>).
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 13. QUERY LANGUAGE                                                  -->
+<!-- =================================================================== -->
+<div class="page page-break" id="query">
+<h2>13 · Query language</h2>
+<p>
+A compact, chip-friendly expression language drives the Entity Explorer's
+advanced filter and the Report Builder's <code>query</code> section.
+Implementation lives in <code>src/lib/query.js</code>.
+</p>
+
+<h3>Grammar</h3>
+<pre><code>query        := clause (WS clause)*
+clause       := field ":" value
+field        := "type" | "country" | "tag" | "risk" | "name" | "id"
+value        := comparison | range | list | string
+comparison   := ("&gt;"|"&lt;"|"&gt;="|"&lt;="|"=") number
+range        := number ".." number
+list         := value ("," value)+
+string       := unquoted | "quoted with spaces"</code></pre>
+
+<h3>Fields</h3>
+<table>
+  <thead><tr><th>Field</th><th>Operators</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td><code>type</code></td><td>eq, in</td><td><code>type:person,organization</code></td></tr>
+    <tr><td><code>country</code></td><td>eq, in (ISO codes, case-insensitive)</td><td><code>country:RU,CN</code></td></tr>
+    <tr><td><code>tag</code></td><td>eq, in</td><td><code>tag:sanctioned,pep</code></td></tr>
+    <tr><td><code>risk</code></td><td>eq, gt, lt, gte, lte, range</td><td><code>risk:&gt;80</code> · <code>risk:60..100</code></td></tr>
+    <tr><td><code>name</code></td><td>contains (case-insensitive)</td><td><code>name:"halcyon holdings"</code></td></tr>
+    <tr><td><code>id</code></td><td>contains (upper-cased)</td><td><code>id:E000ABCD</code></td></tr>
+  </tbody>
+</table>
+
+<h3>Clause combining</h3>
+<p>
+Whitespace-separated clauses are AND-combined. There is no explicit OR; use a
+comma-list inside a single clause for disjunction within one field. Unknown
+fields and malformed numeric values surface as parse errors in the
+<code>errors</code> array returned by <code>compileQuery()</code>; the UI shows them
+inline as red chips.
+</p>
+
+<div class="callout">
+  <strong>Saved queries.</strong> The Entity Explorer's <kbd>★</kbd> button stores
+  the current query string against a chosen name; the dropdown reloads them
+  instantly. Saved queries are scoped per-operator and never leave the browser.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 14. ADMIN                                                           -->
+<!-- =================================================================== -->
+<div class="page page-break" id="admin">
+<h2>14 · Admin &amp; custom role builder</h2>
+<p>
+Admins reach this screen from the left nav or by clicking <em>"⚙ Define a custom
+role"</em> on the login screen. It is split in two: a roster of all roles on the
+left, and an editor on the right.
+</p>
+
+<!-- DIAGRAM: role builder -->
+<div class="diagram">
+<svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="380" fill="#0A0E14"/>
+
+  <!-- Left: role list -->
+  <rect x="10" y="10" width="280" height="360" fill="#141B23" stroke="#1F2937"/>
+  <rect x="10" y="10" width="280" height="22" fill="#0F1419"/>
+  <text x="20" y="25" font-family="JetBrains Mono" font-size="9" fill="#64748B" letter-spacing="1.5">ROLES · 4</text>
+
+  <g font-family="Inter" font-size="10">
+    <rect x="10" y="32" width="280" height="60" fill="rgba(15,20,25,0.4)"/>
+    <text x="20" y="48" fill="#E2E8F0" font-weight="600">Analyst <tspan font-family="JetBrains Mono" font-size="8" fill="#64748B">  system</tspan></text>
+    <text x="20" y="62" fill="#64748B" font-size="9">Read-only entities, events, relationships</text>
+    <text x="20" y="80" fill="#475569" font-family="JetBrains Mono" font-size="8">3 permissions</text>
+    <rect x="240" y="40" width="40" height="14" fill="none" stroke="#2D3748"/><text x="260" y="50" fill="#94A3B8" font-size="9" text-anchor="middle">EDIT</text>
+
+    <rect x="10" y="92" width="280" height="60" fill="none"/>
+    <text x="20" y="108" fill="#E2E8F0" font-weight="600">Investigator <tspan font-family="JetBrains Mono" font-size="8" fill="#64748B">  system</tspan></text>
+    <text x="20" y="122" fill="#64748B" font-size="9">Analyst + investigations + export</text>
+    <text x="20" y="140" fill="#475569" font-family="JetBrains Mono" font-size="8">6 permissions</text>
+    <rect x="240" y="100" width="40" height="14" fill="none" stroke="#2D3748"/><text x="260" y="110" fill="#94A3B8" font-size="9" text-anchor="middle">EDIT</text>
+
+    <rect x="10" y="152" width="280" height="60" fill="rgba(15,20,25,0.4)"/>
+    <text x="20" y="168" fill="#E2E8F0" font-weight="600">Admin <tspan font-family="JetBrains Mono" font-size="8" fill="#64748B">  system</tspan></text>
+    <text x="20" y="182" fill="#64748B" font-size="9">Full + user &amp; role management</text>
+    <text x="20" y="200" fill="#475569" font-family="JetBrains Mono" font-size="8">9 permissions</text>
+    <rect x="240" y="160" width="40" height="14" fill="none" stroke="#2D3748"/><text x="260" y="170" fill="#94A3B8" font-size="9" text-anchor="middle">EDIT</text>
+
+    <rect x="10" y="212" width="280" height="60" fill="none"/>
+    <text x="20" y="228" fill="#E2E8F0" font-weight="600">Forensic Auditor <tspan font-family="JetBrains Mono" font-size="8" fill="#FF4ECD">  custom</tspan></text>
+    <text x="20" y="242" fill="#64748B" font-size="9">All read perms; no edits</text>
+    <text x="20" y="260" fill="#475569" font-family="JetBrains Mono" font-size="8">4 permissions</text>
+    <rect x="200" y="220" width="34" height="14" fill="none" stroke="#2D3748"/><text x="217" y="230" fill="#94A3B8" font-size="9" text-anchor="middle">EDIT</text>
+    <rect x="240" y="220" width="40" height="14" fill="none" stroke="#FF4747"/><text x="260" y="230" fill="#FF4747" font-size="9" text-anchor="middle">DEL</text>
+  </g>
+
+  <!-- Right: editor -->
+  <rect x="296" y="10" width="594" height="360" fill="#141B23" stroke="#1F2937"/>
+  <rect x="296" y="10" width="594" height="22" fill="#0F1419"/>
+  <text x="306" y="25" font-family="JetBrains Mono" font-size="9" fill="#64748B" letter-spacing="1.5">EDIT ROLE · Forensic Auditor</text>
+  <rect x="820" y="14" width="60" height="14" fill="rgba(0,217,255,0.1)" stroke="#00D9FF"/>
+  <text x="850" y="24" font-family="JetBrains Mono" font-size="9" fill="#00D9FF" text-anchor="middle" font-weight="600">SAVE</text>
+
+  <!-- name/desc -->
+  <text x="306" y="56" font-family="JetBrains Mono" font-size="9" fill="#64748B" letter-spacing="1.5">NAME</text>
+  <rect x="430" y="46" width="450" height="20" fill="#0A0E14" stroke="#1F2937"/>
+  <text x="438" y="60" font-family="Inter" font-size="11" fill="#E2E8F0">Forensic Auditor</text>
+
+  <text x="306" y="86" font-family="JetBrains Mono" font-size="9" fill="#64748B" letter-spacing="1.5">DESCRIPTION</text>
+  <rect x="430" y="76" width="450" height="20" fill="#0A0E14" stroke="#1F2937"/>
+  <text x="438" y="90" font-family="Inter" font-size="11" fill="#94A3B8">All read permissions, no write or admin</text>
+
+  <!-- groups -->
+  <rect x="306" y="110" width="574" height="22" fill="#0F1419" stroke="#1F2937"/>
+  <text x="316" y="124" font-family="JetBrains Mono" font-size="9" fill="#22D3A6" letter-spacing="1.5">READ <tspan fill="#94A3B8">  4/4</tspan></text>
+
+  <g font-family="Inter" font-size="10">
+    <rect x="306" y="132" width="574" height="20" fill="rgba(0,217,255,0.05)"/>
+    <rect x="316" y="136" width="10" height="10" fill="rgba(0,217,255,0.3)" stroke="#00D9FF"/>
+    <rect x="319" y="139" width="4" height="4" fill="#00D9FF"/>
+    <text x="332" y="146" fill="#E2E8F0">View entities</text>
+    <text x="850" y="146" font-family="JetBrains Mono" font-size="9" fill="#64748B" text-anchor="end">view_entities</text>
+
+    <rect x="306" y="152" width="574" height="20" fill="rgba(0,217,255,0.05)"/>
+    <rect x="316" y="156" width="10" height="10" fill="rgba(0,217,255,0.3)" stroke="#00D9FF"/>
+    <rect x="319" y="159" width="4" height="4" fill="#00D9FF"/>
+    <text x="332" y="166" fill="#E2E8F0">View relationships</text>
+    <text x="850" y="166" font-family="JetBrains Mono" font-size="9" fill="#64748B" text-anchor="end">view_relationships</text>
+
+    <rect x="306" y="172" width="574" height="20" fill="rgba(0,217,255,0.05)"/>
+    <rect x="316" y="176" width="10" height="10" fill="rgba(0,217,255,0.3)" stroke="#00D9FF"/>
+    <rect x="319" y="179" width="4" height="4" fill="#00D9FF"/>
+    <text x="332" y="186" fill="#E2E8F0">View events</text>
+    <text x="850" y="186" font-family="JetBrains Mono" font-size="9" fill="#64748B" text-anchor="end">view_events</text>
+
+    <rect x="306" y="192" width="574" height="20" fill="rgba(0,217,255,0.05)"/>
+    <rect x="316" y="196" width="10" height="10" fill="rgba(0,217,255,0.3)" stroke="#00D9FF"/>
+    <rect x="319" y="199" width="4" height="4" fill="#00D9FF"/>
+    <text x="332" y="206" fill="#E2E8F0">View audit log</text>
+    <text x="850" y="206" font-family="JetBrains Mono" font-size="9" fill="#64748B" text-anchor="end">view_audit</text>
+  </g>
+
+  <rect x="306" y="222" width="574" height="22" fill="#0F1419" stroke="#1F2937"/>
+  <text x="316" y="236" font-family="JetBrains Mono" font-size="9" fill="#FFB627" letter-spacing="1.5">WRITE <tspan fill="#94A3B8">  0/3</tspan></text>
+
+  <g font-family="Inter" font-size="10">
+    <rect x="306" y="244" width="574" height="20" fill="none"/>
+    <rect x="316" y="248" width="10" height="10" fill="none" stroke="#2D3748"/>
+    <text x="332" y="258" fill="#94A3B8">Edit entities</text>
+
+    <rect x="306" y="264" width="574" height="20" fill="none"/>
+    <rect x="316" y="268" width="10" height="10" fill="none" stroke="#2D3748"/>
+    <text x="332" y="278" fill="#94A3B8">Open investigations</text>
+
+    <rect x="306" y="284" width="574" height="20" fill="none"/>
+    <rect x="316" y="288" width="10" height="10" fill="none" stroke="#2D3748"/>
+    <text x="332" y="298" fill="#94A3B8">Export data</text>
+  </g>
+
+  <rect x="306" y="314" width="574" height="22" fill="#0F1419" stroke="#1F2937"/>
+  <text x="316" y="328" font-family="JetBrains Mono" font-size="9" fill="#FF4ECD" letter-spacing="1.5">ADMIN <tspan fill="#94A3B8">  0/2</tspan></text>
+
+  <g font-family="Inter" font-size="10">
+    <rect x="306" y="336" width="574" height="20" fill="none"/>
+    <rect x="316" y="340" width="10" height="10" fill="none" stroke="#2D3748"/>
+    <text x="332" y="350" fill="#94A3B8">Manage users</text>
+  </g>
+</svg>
+<div class="caption">DIAGRAM 7.1 · Custom role builder, permissions grouped READ / WRITE / ADMIN</div>
+</div>
+
+<h3>Creating a custom role</h3>
+<ol>
+  <li>Leave the role list with no row selected (the editor shows "NEW ROLE").</li>
+  <li>Type a <strong>name</strong> and a one-line <strong>description</strong>.</li>
+  <li>Click permissions to toggle them on / off. Each group counter updates live.</li>
+  <li>Click <kbd>SAVE</kbd>. The role is persisted to IndexedDB and appears on the
+      login screen for everyone.</li>
+</ol>
+
+<h3>Editing or deleting a role</h3>
+<p>
+Click <kbd>EDIT</kbd> on any role to load it into the editor. System roles can be
+edited but not deleted (the <kbd>DEL</kbd> button is hidden). Custom roles can be
+fully removed; existing operators with that role will fall back to the lowest-power
+role on next sign-in.
+</p>
+<div class="callout warn">
+  <strong>Audit.</strong> Every role create / edit / delete writes to the audit log
+  with the actor's ID and the permission count of the resulting role.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 8. COMMAND PALETTE                                                  -->
+<!-- =================================================================== -->
+<div class="page page-break" id="palette">
+<h2>15 · Command palette &amp; shortcuts</h2>
+
+<p>Open the palette with <kbd>⌘K</kbd> (mac) or <kbd>Ctrl K</kbd> (Windows / Linux).
+It does three things:</p>
+
+<ul>
+  <li><strong>Navigate</strong> — fuzzy-match any screen name. Registered routes: Dashboard, Entity Explorer, Graph View, Investigations, Admin / Roles. Geospatial, Anomaly Tuning, and Report Builder are reachable via the left nav.</li>
+  <li><strong>Search entities</strong> — name or ID, top 8 by risk.</li>
+  <li><strong>Run actions</strong> — registered commands; Phase 4 expands the registry (chord shortcuts, saved-query recall).</li>
+</ul>
+
+<h3>Keyboard shortcuts</h3>
+<table>
+  <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>⌘K</kbd> / <kbd>Ctrl K</kbd></td><td>Open / close command palette</td></tr>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Move palette selection</td></tr>
+    <tr><td><kbd>↵</kbd></td><td>Activate selected palette item</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Close palette / inspector</td></tr>
+    <tr><td><kbd>G D</kbd></td><td>Go to Dashboard <em>(Phase 4)</em></td></tr>
+    <tr><td><kbd>G E</kbd></td><td>Go to Entity Explorer <em>(Phase 4)</em></td></tr>
+    <tr><td><kbd>?</kbd></td><td>Show shortcut cheatsheet <em>(Phase 4)</em></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- =================================================================== -->
+<!-- 9. WORKFLOWS                                                        -->
+<!-- =================================================================== -->
+<div class="page page-break" id="workflows">
+<h2>16 · Common workflows</h2>
+
+<!-- DIAGRAM: workflow -->
+<div class="diagram">
+<svg viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg">
+  <style>.b{fill:#141B23;stroke:#1F2937}.t{font:600 10px 'Inter';fill:#E2E8F0}.s{font:9px 'JetBrains Mono';fill:#64748B}</style>
+  <rect width="900" height="240" fill="#0F1419"/>
+
+  <!-- 5 nodes -->
+  <g>
+    <rect x="20" y="80" width="140" height="80" class="b"/>
+    <text x="90" y="110" text-anchor="middle" class="t">1. WATCH</text>
+    <text x="90" y="128" text-anchor="middle" class="s">Dashboard</text>
+    <text x="90" y="142" text-anchor="middle" class="s">Anomalies tile</text>
+
+    <rect x="200" y="80" width="140" height="80" class="b"/>
+    <text x="270" y="110" text-anchor="middle" class="t">2. TRIAGE</text>
+    <text x="270" y="128" text-anchor="middle" class="s">⌘K → entity</text>
+    <text x="270" y="142" text-anchor="middle" class="s">Inspector</text>
+
+    <rect x="380" y="80" width="140" height="80" class="b"/>
+    <text x="450" y="110" text-anchor="middle" class="t">3. EXPLORE</text>
+    <text x="450" y="128" text-anchor="middle" class="s">Entity Explorer</text>
+    <text x="450" y="142" text-anchor="middle" class="s">facets + filters</text>
+
+    <rect x="560" y="80" width="140" height="80" class="b"/>
+    <text x="630" y="110" text-anchor="middle" class="t">4. OPEN CASE</text>
+    <text x="630" y="128" text-anchor="middle" class="s">Investigations</text>
+    <text x="630" y="142" text-anchor="middle" class="s">add entities</text>
+
+    <rect x="740" y="80" width="140" height="80" class="b"/>
+    <text x="810" y="110" text-anchor="middle" class="t">5. ESCALATE</text>
+    <text x="810" y="128" text-anchor="middle" class="s">Export evidence</text>
+    <text x="810" y="142" text-anchor="middle" class="s">notify reviewer</text>
+  </g>
+  <g stroke="#00D9FF" stroke-width="1.5" fill="none">
+    <path d="M160 120 L195 120" marker-end="url(#a)"/>
+    <path d="M340 120 L375 120" marker-end="url(#a)"/>
+    <path d="M520 120 L555 120" marker-end="url(#a)"/>
+    <path d="M700 120 L735 120" marker-end="url(#a)"/>
+  </g>
+  <defs>
+    <marker id="a" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 z" fill="#00D9FF"/>
+    </marker>
+  </defs>
+
+  <!-- role band -->
+  <g>
+    <rect x="20" y="190" width="320" height="22" fill="rgba(34,211,166,0.08)" stroke="#22D3A6"/>
+    <text x="180" y="205" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#22D3A6" letter-spacing="1.5">ANALYST</text>
+    <rect x="350" y="190" width="350" height="22" fill="rgba(255,182,39,0.08)" stroke="#FFB627"/>
+    <text x="525" y="205" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#FFB627" letter-spacing="1.5">INVESTIGATOR</text>
+    <rect x="710" y="190" width="170" height="22" fill="rgba(255,78,205,0.08)" stroke="#FF4ECD"/>
+    <text x="795" y="205" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#FF4ECD" letter-spacing="1.5">INVESTIGATOR / ADMIN</text>
+  </g>
+</svg>
+<div class="caption">DIAGRAM 9.1 · End-to-end alert → escalation flow with role hand-offs</div>
+</div>
+
+<h3>Workflow A — Triage a critical anomaly</h3>
+<ol>
+  <li>From the Dashboard, the <strong>Anomalies tile</strong> shows a fresh <span class="chip crit">CRIT</span> row.</li>
+  <li>Note the entity ID (last column of the row). Press <kbd>⌘K</kbd>, paste the ID.</li>
+  <li>Hit <kbd>↵</kbd> to jump to Entity Explorer with the row pre-focused.</li>
+  <li>Inspector opens automatically — review attributes and last 10 events.</li>
+  <li>If suspicion confirmed, jump to <em>Investigations</em>, click <kbd>+ NEW CASE</kbd>, and add this entity to the case from the left rail.</li>
+</ol>
+
+<h3>Workflow B — Search for an entity by name</h3>
+<ol>
+  <li>Open the palette (<kbd>⌘K</kbd>).</li>
+  <li>Type any subsequence of the name (e.g. <code>hlcn</code> matches "Halcyon Holdings").</li>
+  <li>Press <kbd>↵</kbd> on the top result.</li>
+</ol>
+
+<h3>Workflow C — Define a new role and assign it</h3>
+<ol>
+  <li>Sign in as <strong>Admin</strong>.</li>
+  <li>Go to <em>Admin → Roles</em>. The editor shows "NEW ROLE".</li>
+  <li>Name it, describe it, toggle the permissions you want.</li>
+  <li>Click <kbd>SAVE</kbd>. Sign out.</li>
+  <li>On the login screen, your custom role is now selectable.</li>
+</ol>
+</div>
+
+<!-- =================================================================== -->
+<!-- 10. AUDIT                                                           -->
+<!-- =================================================================== -->
+<div class="page page-break" id="audit">
+<h2>17 · Audit &amp; compliance</h2>
+<p>
+Every read of an entity, every role change, every login, every case edit, every
+graph node selection, and every CSV export writes an entry to the
+<code>audit</code> object store in IndexedDB. The full trail is browsable and
+exportable from the <a href="#auditlog">Audit Log screen</a>.
+</p>
+<table>
+  <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>auto-increment</td><td>Primary key.</td></tr>
+    <tr><td><code>userId</code></td><td>string</td><td>The signed-in operator's ID, or <code>'system'</code>.</td></tr>
+    <tr><td><code>action</code></td><td>string</td><td><code>login</code>, <code>view_entity</code>, <code>view_node</code>, <code>view_cluster</code>, <code>run_query</code>, <code>save_query</code>, <code>export_entities</code>, <code>open_case</code>, <code>edit_case</code>, <code>close_case</code>, <code>export_audit</code>, <code>save_model</code>, <code>delete_model</code>, <code>apply_model</code>, <code>cache_tiles</code>, <code>save_report</code>, <code>print_report</code>, <code>create_role</code>, …</td></tr>
+    <tr><td><code>target</code></td><td>string?</td><td>The affected object's ID, when applicable.</td></tr>
+    <tr><td><code>details</code></td><td>JSON?</td><td>Optional structured context.</td></tr>
+    <tr><td><code>ts</code></td><td>epoch ms</td><td>Server-clock not available offline — uses local clock.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  Audit writes are fire-and-forget and never block the UI. A failed write is
+  swallowed silently to avoid cascading errors in a forensic context.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 11. OFFLINE                                                         -->
+<!-- =================================================================== -->
+<div class="page page-break" id="offline">
+<h2>18 · Offline mode</h2>
+<p>
+ATLANTIS is built for air-gapped or unreliable-network environments. The first
+visit caches the entire bundle via a service worker; subsequent visits work
+without any network.
+</p>
+<ul>
+  <li><strong>HTML</strong> is NetworkFirst — picks up new builds when online.</li>
+  <li><strong>JS / CSS / fonts / workers</strong> are CacheFirst.</li>
+  <li><strong>Data</strong> never leaves the browser — all IndexedDB.</li>
+  <li><strong>Map tiles</strong> currently require network; the Geospatial View ships
+      an offline-tile cache sketch (Dexie-backed <code>tileCache</code> store with cache /
+      clear controls). Production MBTiles ingestion lands in Phase 4.</li>
+</ul>
+<div class="callout warn">
+  Clearing browser storage will wipe IndexedDB and force a full re-seed on next
+  load. Export critical investigations before clearing.
+</div>
+</div>
+
+<!-- =================================================================== -->
+<!-- 12. GLOSSARY                                                        -->
+<!-- =================================================================== -->
+<div class="page page-break" id="glossary">
+<h2>19 · Glossary</h2>
+<table>
+  <tbody>
+    <tr><td><strong>Entity</strong></td><td>Any noun the platform tracks: person, organization, account, transaction, location, device.</td></tr>
+    <tr><td><strong>Relationship</strong></td><td>A typed, weighted edge between two entities.</td></tr>
+    <tr><td><strong>Event</strong></td><td>A timestamped action: transaction, login, wire, alert, access, KYC check.</td></tr>
+    <tr><td><strong>Anomaly</strong></td><td>A model-flagged event or pattern with a severity and human-readable reason.</td></tr>
+    <tr><td><strong>Investigation</strong></td><td>A case bundling entities, evidence, and notes.</td></tr>
+    <tr><td><strong>Role</strong></td><td>A named bundle of permissions assigned to an operator.</td></tr>
+    <tr><td><strong>Tick</strong></td><td>The synthetic live-data heartbeat (every 2–5s) emitted by the tick worker.</td></tr>
+    <tr><td><strong>Smurfing</strong></td><td>Structuring multiple small transactions to evade reporting thresholds.</td></tr>
+    <tr><td><strong>Layering</strong></td><td>Shuffling funds through intermediaries to obscure origin.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- =================================================================== -->
+<!-- 13. ROADMAP                                                         -->
+<!-- =================================================================== -->
+<div class="page page-break" id="roadmap">
+<h2>20 · Phase 4 / future</h2>
+<h3>Shipped in Phase 2</h3>
+<table>
+  <thead><tr><th>Capability</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>Graph View — force-directed canvas, layout picker, edge-kind toggles, risk &amp; edge-limit filters, time scrubber, neighbour-expand inspector</td><td><span class="chip">shipped</span></td></tr>
+    <tr><td>Investigation Workspace — list + three-column case detail (entities · notes · evidence) with status &amp; progress controls</td><td><span class="chip">shipped</span></td></tr>
+    <tr><td>Dedicated Audit Log screen — range chips, action facet, operator search, CSV export</td><td><span class="chip">shipped</span></td></tr>
+  </tbody>
+</table>
+
+<h3>Shipped in Phase 3</h3>
+<table>
+  <thead><tr><th>Capability</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>Geospatial View — clustered Leaflet map, basemap chips, risk &amp; event-window sliders, offline-tile cache sketch</td><td><span class="chip">shipped</span></td></tr>
+    <tr><td>Anomaly Tuning — weighted-signal sliders, threshold, 500-entity preview, save/load/apply, persisted detections</td><td><span class="chip">shipped</span></td></tr>
+    <tr><td>Report Builder — six section types (cover, metrics, query, anomalies, cases, notes), reorder/remove, save, browser PDF export, per-section CSV</td><td><span class="chip">shipped</span></td></tr>
+    <tr><td>Query language — chip-friendly grammar (<code>type · country · tag · risk · name · id</code>) with comparison, range, list, quoted strings; powers the Explorer and report query sections</td><td><span class="chip">shipped</span></td></tr>
+    <tr><td>Toast notifications — save / apply / delete confirmations and validation feedback</td><td><span class="chip">shipped</span></td></tr>
+    <tr><td>Command palette — Graph / Investigations / Admin navigation actions</td><td><span class="chip">shipped</span></td></tr>
+  </tbody>
+</table>
+
+<h3>Planned for Phase 4</h3>
+<table>
+  <thead><tr><th>Capability</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>Real MBTiles ingestion for offline maps (the Phase-3 sketch is a placeholder)</td><td><span class="chip warn">scheduled</span></td></tr>
+    <tr><td>Command-palette chords (<code>G D</code> / <code>G E</code>) + <code>?</code> cheatsheet</td><td><span class="chip warn">scheduled</span></td></tr>
+    <tr><td>Saved-query sharing &amp; per-role visibility</td><td><span class="chip">planned</span></td></tr>
+    <tr><td>Parquet export from the Report Builder query section</td><td><span class="chip">planned</span></td></tr>
+    <tr><td>Anomaly model: time-series signals (velocity, dormancy reactivation) wired into the weight matrix</td><td><span class="chip">planned</span></td></tr>
+    <tr><td>Multi-operator collaboration (case sharing, presence) — requires a sync layer and is out of scope for the offline build</td><td><span class="chip">planned</span></td></tr>
+  </tbody>
+</table>
+
+<div class="footer-bar">
+  <span>ATLANTIS · USER MANUAL · v0.3 · END OF DOCUMENT</span>
+  <span>RESTRICTED · INTERNAL USE</span>
+</div>
+</div>
+
+</body>
+</html>
