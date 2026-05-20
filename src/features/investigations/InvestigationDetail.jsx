@@ -41,6 +41,7 @@ export default function InvestigationDetail() {
 
   const [noteDraft, setNoteDraft] = useState('');
   const [addId, setAddId] = useState('');
+  const [addErr, setAddErr] = useState('');
 
   if (!cse) {
     return <div className="h-full grid place-items-center text-xs text-text-muted">Loading case…</div>;
@@ -72,15 +73,17 @@ export default function InvestigationDetail() {
     const upper = addId.trim().toUpperCase();
     const ent = await db.entities.get(upper);
     if (!ent) {
-      alert(`No entity with id ${upper}`);
+      setAddErr(`No entity: ${upper}`);
       return;
     }
     if (cse.entityIds?.includes(upper)) {
       setAddId('');
+      setAddErr('');
       return;
     }
     await updateCase({ entityIds: [...(cse.entityIds || []), upper] });
     setAddId('');
+    setAddErr('');
   };
 
   const removeEntity = async (eid) => {
@@ -149,17 +152,20 @@ export default function InvestigationDetail() {
           <div className="section-label px-2 py-1.5 border-b border-border-subtle">
             ENTITIES · {(entities ?? []).length}
           </div>
-          <div className="px-2 py-1.5 border-b border-border-subtle flex items-center gap-1">
-            <input
-              className="input h-6 flex-1"
-              placeholder="Add by ID (E000…)"
-              value={addId}
-              onChange={(e) => setAddId(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addEntity()}
-            />
-            <button type="button" className="btn btn-primary h-6" onClick={addEntity}>
-              +
-            </button>
+          <div className="px-2 py-1.5 border-b border-border-subtle flex flex-col gap-1">
+            <div className="flex items-center gap-1">
+              <input
+                className="input h-6 flex-1"
+                placeholder="Add by ID (E000…)"
+                value={addId}
+                onChange={(e) => { setAddId(e.target.value); setAddErr(''); }}
+                onKeyDown={(e) => e.key === 'Enter' && addEntity()}
+              />
+              <button type="button" className="btn btn-primary h-6" onClick={addEntity}>
+                +
+              </button>
+            </div>
+            {addErr && <span className="text-micro text-accent-critical">{addErr}</span>}
           </div>
           <ul className="flex-1 overflow-auto">
             {(entities ?? []).map((e) => (

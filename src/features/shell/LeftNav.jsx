@@ -15,6 +15,7 @@ const NAV = [
   { to: '/investigations', label: 'Cases', icon: '⌬', requires: 'open_investigations' },
   { to: '/map', label: 'Geospatial', icon: '◎', requires: 'view_entities' },
   { to: '/anomalies', label: 'Anomalies', icon: '△', requires: 'view_events' },
+  { to: '/reports', label: 'Reports', icon: '⊞', requires: 'export_data' },
   { to: '/audit', label: 'Audit log', icon: '☰', requires: 'view_audit' },
   { to: '/admin', label: 'Admin', icon: '⚙', requires: 'manage_roles' },
 ];
@@ -58,7 +59,7 @@ export function LeftNav({ collapsed = false }) {
       </ul>
       {!collapsed && (
         <div className="px-2 py-1.5 border-t border-border-subtle text-micro text-text-muted uppercase tracking-wider">
-          v0.2 · phase 2
+          v0.4 · phase 4
         </div>
       )}
     </nav>

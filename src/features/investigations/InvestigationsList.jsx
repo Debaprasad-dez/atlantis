@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Panel, DataTable } from '@/components/primitives';
+import { Panel, DataTable, Modal } from '@/components/primitives';
 import { Permitted } from '@/components/Permitted';
 import { useDexie } from '@/hooks/useDexie';
 import { db } from '@/db/schema';
@@ -58,6 +58,9 @@ const columns = [
 
 export default function InvestigationsList() {
   const [filter, setFilter] = useState('all');
+  const [newOpen, setNewOpen] = useState(false);
+  const [draft, setDraft] = useState('');
+  const inputRef = useRef(null);
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const { data } = useDexie(
@@ -66,13 +69,14 @@ export default function InvestigationsList() {
   );
   const rows = (data ?? []).filter((c) => filter === 'all' || c.status === filter);
 
-  const newCase = async () => {
-    const title = prompt('Case title:');
-    if (!title) return;
+  const openNew = () => { setDraft(''); setNewOpen(true); };
+
+  const createCase = async () => {
+    if (!draft.trim()) return;
     const id = ulid();
     await db.investigations.put({
       id,
-      title,
+      title: draft.trim(),
       status: 'open',
       ownerId: user?.id ?? 'system',
       entityIds: [],
@@ -80,7 +84,8 @@ export default function InvestigationsList() {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
-    audit(user?.id, 'open_case', id, { title });
+    audit(user?.id, 'open_case', id, { title: draft.trim() });
+    setNewOpen(false);
     navigate(`/investigations/${id}`);
   };
 
@@ -103,7 +108,7 @@ export default function InvestigationsList() {
         <div className="flex-1" />
         <span className="tabular text-micro text-text-muted">{rows.length} cases</span>
         <Permitted permission="open_investigations">
-          <button type="button" className="btn btn-primary h-7" onClick={newCase}>
+          <button type="button" className="btn btn-primary h-7" onClick={openNew}>
             + NEW CASE
           </button>
         </Permitted>
@@ -111,6 +116,32 @@ export default function InvestigationsList() {
       <Panel className="flex-1">
         <DataTable rows={rows} columns={columns} rowKey={(r) => r.id} />
       </Panel>
+
+      <Modal
+        open={newOpen}
+        onClose={() => setNewOpen(false)}
+        title="NEW CASE"
+        size="sm"
+        footer={
+          <>
+            <button type="button" className="btn h-7" onClick={() => setNewOpen(false)}>CANCEL</button>
+            <button type="button" className="btn btn-primary h-7" onClick={createCase} disabled={!draft.trim()}>CREATE</button>
+          </>
+        }
+      >
+        <div className="p-4 space-y-2">
+          <label className="section-label block">CASE TITLE</label>
+          <input
+            ref={inputRef}
+            autoFocus
+            className="input w-full"
+            placeholder="e.g. Suspicious wire cluster — ACME Corp"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && createCase()}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }
