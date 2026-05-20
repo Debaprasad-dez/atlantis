@@ -196,17 +196,35 @@ stream &amp; alert counters on the right, then the operator avatar with a sign-o
 control.</p>
 
 <h3>2 — Left navigation</h3>
-<p>Persistent vertical rail. The active route gets a cyan accent stripe. The set of
-visible items is filtered by your role's permissions (Phase 2 will hide items you
-cannot use; today every link is visible but protected screens redirect).</p>
+<p>Persistent vertical rail with a cyan accent stripe on the active route. The
+rail links every shipped screen: Dashboard, Entities, Graph, Cases, Geospatial,
+Anomalies, Audit, Admin, Reports. Each link is gated by a <code>RouteGuard</code>;
+unauthorised navigation redirects to the dashboard.</p>
 
 <h3>3 — Main content</h3>
 <p>The active screen. Each screen owns its own internal layout — typically with
-left-rail facets, a center workspace, and a right-side inspector.</p>
+left-rail facets, a centre workspace, and a right-side inspector. Most
+multi-pane screens use the <code>Splitter</code> primitive, so the rails are
+user-resizable; widths persist per-pane in <code>localStorage</code>.</p>
 
 <h3>4 — Bottom status bar</h3>
 <p>System telemetry at a glance: connection state, record counts, ingestion delta,
 system load, query latency, current operator, keyboard hints, and UTC clock.</p>
+
+<h3>Shared UI primitives</h3>
+<p>
+Every screen draws from the same primitive set in
+<code>src/components/primitives/</code>. A few you'll encounter most often:
+</p>
+<ul>
+  <li><strong>Splitter</strong> — drag the 4px hairline between rails to resize. Widths persist per-instance.</li>
+  <li><strong>Inspector</strong> — the standard right-rail detail pane with a header bar and close affordance.</li>
+  <li><strong>FilterChip</strong> — the small toggle chips used for facets, edge kinds, severity, time ranges.</li>
+  <li><strong>RiskBar</strong> — a 0–100 risk indicator coloured by band (cyan / amber / red).</li>
+  <li><strong>Modal</strong> &amp; <strong>Menu</strong> — used by the Admin role editor, the Anomaly Tuning save prompt, and similar transient surfaces.</li>
+  <li><strong>Skeleton</strong> — the scanning-shimmer placeholder shown while large tables stream rows.</li>
+  <li><strong>Toasts</strong> — the bottom-right confirmation layer (success / info / warning / error). Backed by <code>toastStore</code> and used by every save / apply / delete action.</li>
+</ul>
 </div>
 
 <!-- =================================================================== -->
@@ -759,13 +777,39 @@ the inspector.</p>
 <div class="caption">DIAGRAM 6.1 · Entity Explorer (facets, table, inspector)</div>
 </div>
 
-<h3>Working with facets</h3>
-<ol>
-  <li>Click any chip to toggle that filter on / off.</li>
-  <li>Multiple chips in the same group form an <strong>OR</strong>; across groups they form an <strong>AND</strong>.</li>
-  <li>Risk range narrows the result set by composite risk score.</li>
-  <li>The search box matches by entity name or ID prefix.</li>
-</ol>
+<h3>The chip query input</h3>
+<p>
+The top bar hosts a <code>ChipQueryInput</code>: parsed clauses render as cyan chips,
+unrecognized tokens render as red error chips, and the raw text is editable
+inline. Whitespace-separated clauses are AND-combined; comma-lists within a
+single clause are OR. See <a href="#query">§13 · Query language</a> for the full
+grammar.
+</p>
+
+<h3>Quick facets &amp; saved queries</h3>
+<ul>
+  <li><strong>QUICK FACETS</strong> (left rail) — one-click presets: <em>High risk</em>, <em>Sanctioned</em>, <em>High-risk jurisdiction</em>, <em>Shell companies</em>, <em>PEP persons</em>. Clicking a preset appends its expression to the current query.</li>
+  <li><strong>SAVED QUERIES</strong> — the <kbd>★ SAVE</kbd> button prompts for a name and persists the current query string to the <code>savedQueries</code> store with a <code>save_query</code> audit entry. The list below the facets reloads them on click; hover for the <kbd>×</kbd> delete.</li>
+  <li>Submitting the query writes a <code>run_query</code> audit entry with the resulting row count.</li>
+</ul>
+
+<h3>Deep links</h3>
+<p>
+The Explorer reads two URL parameters:
+</p>
+<ul>
+  <li><code>?focus=ID</code> — auto-seeds the query as <code>id:ID</code> and opens the inspector on that row.</li>
+  <li><code>?seedQuery=…</code> — pre-populates the chip input. Used by the command palette and quick-jump buttons from the Graph / Geo views.</li>
+</ul>
+
+<h3>CSV export</h3>
+<p>
+Operators with the <code>export_data</code> permission see a <kbd>CSV</kbd> button next
+to <kbd>★ SAVE</kbd>. It serialises the currently-displayed rows (id, type, name,
+country, risk, pipe-joined tags) to
+<code>atlantis-entities-{timestamp}.csv</code> and emits an
+<code>export_entities</code> audit entry.
+</p>
 
 <h3>The inspector</h3>
 <p>Clicking any row opens the right-side inspector with:</p>
@@ -1362,7 +1406,7 @@ exportable from the <a href="#auditlog">Audit Log screen</a>.
   <tbody>
     <tr><td><code>id</code></td><td>auto-increment</td><td>Primary key.</td></tr>
     <tr><td><code>userId</code></td><td>string</td><td>The signed-in operator's ID, or <code>'system'</code>.</td></tr>
-    <tr><td><code>action</code></td><td>string</td><td><code>login</code>, <code>view_entity</code>, <code>view_node</code>, <code>view_cluster</code>, <code>open_case</code>, <code>edit_case</code>, <code>close_case</code>, <code>export_audit</code>, <code>save_model</code>, <code>delete_model</code>, <code>apply_model</code>, <code>cache_tiles</code>, <code>save_report</code>, <code>print_report</code>, <code>create_role</code>, …</td></tr>
+    <tr><td><code>action</code></td><td>string</td><td><code>login</code>, <code>view_entity</code>, <code>view_node</code>, <code>view_cluster</code>, <code>run_query</code>, <code>save_query</code>, <code>export_entities</code>, <code>open_case</code>, <code>edit_case</code>, <code>close_case</code>, <code>export_audit</code>, <code>save_model</code>, <code>delete_model</code>, <code>apply_model</code>, <code>cache_tiles</code>, <code>save_report</code>, <code>print_report</code>, <code>create_role</code>, …</td></tr>
     <tr><td><code>target</code></td><td>string?</td><td>The affected object's ID, when applicable.</td></tr>
     <tr><td><code>details</code></td><td>JSON?</td><td>Optional structured context.</td></tr>
     <tr><td><code>ts</code></td><td>epoch ms</td><td>Server-clock not available offline — uses local clock.</td></tr>

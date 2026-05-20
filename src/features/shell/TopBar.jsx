@@ -148,6 +148,18 @@ export function TopBar() {
           {theme === 'dark' ? '☀' : '◑'}
         </button>
 
+        {/* User manual */}
+        <a
+          href="/atlantis/docs/USER_MANUAL.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center h-6 w-6 border border-border-subtle bg-bg-base hover:border-border-emphasis hover:text-text-primary transition-colors text-text-secondary"
+          title="User manual"
+          aria-label="Open user manual"
+        >
+          ?
+        </a>
+
         <span className="text-border-emphasis hidden sm:inline">│</span>
 
         {/* User */}
